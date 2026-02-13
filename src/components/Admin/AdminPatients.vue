@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { getApiUrl } from '../../config/api';
 import { storage } from '../../utils/storage';
 
 interface Patient {
@@ -58,7 +59,7 @@ const handleBanToggle = async (patient: Patient) => {
   if (!confirm(`Voulez-vous vraiment ${patient.isBanned ? 'débloquer' : 'bloquer'} ce patient ?`)) return;
 
   try {
-    const response = await fetch(`/api/admin/users/${patient.id}/ban`, {
+    const response = await fetch(getApiUrl(`/admin/users/${patient.id}/ban`), {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,

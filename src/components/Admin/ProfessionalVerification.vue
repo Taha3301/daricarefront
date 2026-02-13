@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { getApiUrl } from '../../config/api';
 
 import { storage } from '../../utils/storage';
 
@@ -31,7 +32,7 @@ const fetchAlerts = async (proId: number) => {
   if (!token) return;
 
   try {
-    const response = await fetch(`/api/alerts/professional/${proId}`, {
+    const response = await fetch(getApiUrl(`/alerts/professional/${proId}`), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': '*/*'
@@ -57,7 +58,7 @@ const sendAlert = async () => {
 
   try {
     isSendingAlert.value = true;
-    const response = await fetch('/api/alerts', {
+    const response = await fetch(getApiUrl('/alerts'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -97,7 +98,7 @@ const toggleAlertUpdate = async (alert: any) => {
   if (!token) return;
 
   try {
-    const response = await fetch(`/api/alerts/${alert.id}/toggle-update`, {
+    const response = await fetch(getApiUrl(`/alerts/${alert.id}/toggle-update`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -147,7 +148,7 @@ const fetchProfessionals = async () => {
 
   try {
     isLoading.value = true;
-    const response = await fetch('/api/auth/professionals/documents', {
+    const response = await fetch(getApiUrl('/auth/professionals/documents'), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': '*/*'
@@ -161,7 +162,7 @@ const fetchProfessionals = async () => {
       // Fetch alerts for each professional in parallel to populate the status column
       const fetchAlertPromises = professionals.value.map(async (pro) => {
         try {
-          const alertsRes = await fetch(`/api/alerts/professional/${pro.id}`, {
+          const alertsRes = await fetch(getApiUrl(`/alerts/professional/${pro.id}`), {
             headers: {
               'Authorization': `Bearer ${token}`,
               'accept': '*/*'
@@ -203,7 +204,7 @@ const toggleDocumentVerification = async (docId: number, verified: boolean) => {
   if (!token) return;
 
   try {
-    const response = await fetch(`/api/documents/${docId}`, {
+    const response = await fetch(getApiUrl(`/documents/${docId}`), {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -221,7 +222,7 @@ const toggleDocumentVerification = async (docId: number, verified: boolean) => {
         // If unverifying and the pro is currently validated, demote to PENDING
         if (!verified && (selectedPro.value.status === 'ACCEPTED' || selectedPro.value.status === 'VALIDATED')) {
           try {
-            const statusResponse = await fetch(`/api/auth/admin/user/${selectedPro.value.id}`, {
+            const statusResponse = await fetch(getApiUrl(`/auth/admin/user/${selectedPro.value.id}`), {
               method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json',
@@ -263,7 +264,7 @@ const updateProfessionalStatus = async (proId: number, status: string) => {
   if (!token) return;
 
   try {
-    const response = await fetch(`/api/auth/admin/user/${proId}`, {
+    const response = await fetch(getApiUrl(`/auth/admin/user/${proId}`), {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -512,12 +513,12 @@ const isImage = (path: string) => {
             <div v-if="selectedPro.documents && selectedPro.documents.length > 0" class="docs-grid">
               <div v-for="doc in selectedPro.documents" :key="doc.id" class="document-card">
                 <div class="doc-preview">
-                  <img v-if="isImage(doc.filePath)" :src="'/api/' + doc.filePath" class="doc-image-preview" alt="Aperçu du document" />
+                  <img v-if="isImage(doc.filePath)" :src="getApiUrl(doc.filePath)" class="doc-image-preview" alt="Aperçu du document" />
                   <div v-else class="doc-icon">
                     <svg v-if="doc.type === 'ID_CARD'" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><circle cx="19" cy="11" r="2"/></svg>
                     <svg v-else xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                   </div>
-                  <a :href="'/api/' + doc.filePath" target="_blank" class="view-doc-link">Ouvrir le document</a>
+                  <a :href="getApiUrl(doc.filePath)" target="_blank" class="view-doc-link">Ouvrir le document</a>
                 </div>
                 <div class="doc-info">
                   <div class="doc-header-row">

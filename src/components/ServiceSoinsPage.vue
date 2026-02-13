@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { getApiUrl } from '../config/api';
 
 type ChoiceField = {
   id: number;
@@ -148,7 +149,7 @@ const fetchServices = async () => {
     const headers: Record<string, string> = { accept: '*/*' };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    const res = await fetch('/api/services', { headers });
+    const res = await fetch(getApiUrl('/services'), { headers });
     
     if (res.status === 401) {
       console.warn('Unauthorized. Redirecting to login.');
@@ -349,7 +350,7 @@ const submitRequest = async () => {
     const headers: Record<string, string> = {};
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    const res = await fetch('/api/bookings', {
+    const res = await fetch(getApiUrl('/bookings'), {
       method: 'POST',
       headers,
       body: fd

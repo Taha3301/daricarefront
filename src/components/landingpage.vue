@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { getApiUrl } from '../config/api';
 
 type Service = {
   id: number;
@@ -25,7 +26,7 @@ const fetchServices = async () => {
     const headers: Record<string, string> = { accept: '*/*' };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    const response = await fetch('/api/services', { headers });
+    const response = await fetch(getApiUrl('/services'), { headers });
 
     if (response.status === 401) {
       console.warn('Unauthorized. Redirecting to login.');

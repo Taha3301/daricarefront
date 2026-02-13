@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { getApiUrl } from '../../config/api';
 import { storage } from '../../utils/storage';
 const localStorage = storage;
 
@@ -78,8 +79,8 @@ const handleSaveService = async () => {
   const token = localStorage.getItem('access_token');
   const method = editingService.value ? 'PATCH' : 'POST';
   const url = editingService.value 
-    ? `/api/services/${editingService.value.id}` 
-    : '/api/services';
+    ? getApiUrl(`/services/${editingService.value.id}`)
+    : getApiUrl('/services');
 
   try {
     const response = await fetch(url, {
@@ -132,9 +133,9 @@ const handleDeleteService = async (id: number) => {
 const handleSaveSoin = async () => {
   const token = localStorage.getItem('access_token');
   const method = editingSoin.value ? 'PATCH' : 'POST';
-  const url = editingSoin.value 
-    ? `/api/soins/${editingSoin.value.id}` 
-    : '/api/soins';
+  const url = editingSoin.value
+    ? getApiUrl(`/soins/${editingSoin.value.id}`)
+    : getApiUrl('/soins');
 
   // Construct payload explicitly as per Swagger
   const payload: any = {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { getApiUrl } from '../../config/api';
 import { storage } from '../../utils/storage';
 
 const emit = defineEmits(['navigate']);
@@ -24,7 +25,7 @@ const handleSignup = async () => {
   isLoading.value = true;
   
   try {
-    const response = await fetch('/api/auth/professional/register', {
+    const response = await fetch(getApiUrl('/auth/professional/register'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

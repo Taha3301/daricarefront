@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { getApiUrl } from '../../config/api';
 import { storage } from '../../utils/storage';
 const localStorage = storage;
 
@@ -75,7 +76,7 @@ const handleChangePassword = async () => {
     // Note: Using existing reset-password endpoint as requested. 
     // Usually this requires a specific reset token, but we are attempting 
     // to use it with the current auth context or as a direct integration.
-    const response = await fetch('/api/auth/reset-password', {
+    const response = await fetch(getApiUrl('/auth/reset-password'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { getApiUrl } from '../../config/api';
 import { storage } from '../../utils/storage';
 
 const bookings = ref<any[]>([]);
@@ -267,7 +268,7 @@ onMounted(fetchBookings);
               <div v-for="doc in selectedBooking.documents" :key="doc.id" class="document-card">
                 <div class="doc-preview">
                   <div class="doc-icon">📄</div>
-                  <a :href="'/api/' + doc.filePath" target="_blank" class="view-doc-link">Voir le document</a>
+                  <a :href="getApiUrl(doc.filePath)" target="_blank" class="view-doc-link">Voir le document</a>
                 </div>
                 <div class="doc-info">
                   <span class="doc-name">{{ doc.fileOriginalName }}</span>

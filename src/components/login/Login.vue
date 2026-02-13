@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { getApiUrl } from '../../config/api';
 import { storage } from '../../utils/storage';
 
 const emit = defineEmits(['navigate']);
@@ -16,7 +17,7 @@ const handleLogin = async () => {
   isLoading.value = true;
   
   try {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch(getApiUrl('/auth/login'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

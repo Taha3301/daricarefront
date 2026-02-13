@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { getApiUrl } from '../../config/api';
 
 const services = ref<any[]>([]);
 const isLoading = ref(false);
@@ -10,7 +11,7 @@ const fetchAllServices = async () => {
   const token = localStorage.getItem('access_token');
   try {
     isLoading.value = true;
-    const response = await fetch('/api/services', {
+    const response = await fetch(getApiUrl('/services'), {
       headers: { 
         'accept': '*/*',
         'Authorization': `Bearer ${token}` 

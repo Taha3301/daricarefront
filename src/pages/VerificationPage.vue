@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { getApiUrl } from '../config/api';
 import { storage } from '../utils/storage';
 const localStorage = storage;
 
@@ -107,7 +108,7 @@ const fetchUserProfile = async () => {
   if (!token) return;
 
   try {
-    const response = await fetch('/api/auth/profile', {
+    const response = await fetch(getApiUrl('/auth/profile'), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': '*/*'
@@ -145,7 +146,7 @@ const fetchUserDocuments = async (userId: string) => {
   if (!token) return;
 
   try {
-    const response = await fetch(`/api/documents/professional/${userId}`, {
+    const response = await fetch(getApiUrl(`/documents/professional/${userId}`), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': '*/*'
@@ -169,7 +170,7 @@ const fetchUserDocuments = async (userId: string) => {
 
 const fetchServices = async () => {
   try {
-    const response = await fetch('/api/services/only', {
+    const response = await fetch(getApiUrl('/services/only'), {
       headers: {
         'accept': '*/*'
       }
@@ -189,7 +190,7 @@ const fetchAlerts = async (proId: string) => {
   if (!token) return;
 
   try {
-    const response = await fetch(`/api/alerts/professional/${proId}`, {
+    const response = await fetch(getApiUrl(`/alerts/professional/${proId}`), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': '*/*'
@@ -246,7 +247,7 @@ const patchDocument = async (docId: number, file: File) => {
     patchFormData.append('professionalId', userId);
     patchFormData.append('update', 'true');
     
-    const response = await fetch(`/api/documents/${docId}`, {
+    const response = await fetch(getApiUrl(`/documents/${docId}`), {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -286,7 +287,7 @@ const finalizeAlertUpdates = async () => {
     
     // Execute all toggles in parallel
     const togglePromises = pendingAlerts.map(alert => 
-      fetch(`/api/alerts/${alert.id}/toggle-update`, {
+      fetch(getApiUrl(`/alerts/${alert.id}/toggle-update`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -341,7 +342,7 @@ const submitProfile = async () => {
       longitude: Number(formData.value.longitude) || 0
     };
 
-    const response = await fetch(`/api/auth/admin/user/${userId}`, {
+    const response = await fetch(getApiUrl(`/auth/admin/user/${userId}`), {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -402,7 +403,7 @@ const submitDocuments = async () => {
       docFormData.append('description', description);
       docFormData.append('files', file);
 
-      const docResponse = await fetch('/api/documents', {
+      const docResponse = await fetch(getApiUrl('/documents'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -527,7 +528,7 @@ const submitDocuments = async () => {
               <div class="upload-item">
                 <label>Pièce d'identité (Recto/Verso)</label>
                 <div v-if="existingDocs.find(d => d.type === 'ID_CARD')" class="existing-doc-preview">
-                  <img :src="'/api/' + existingDocs.find(d => d.type === 'ID_CARD').filePath" alt="CIN" class="doc-thumbnail" @click="openUrl('/api/' + existingDocs.find(d => d.type === 'ID_CARD').filePath)" />
+                  <img :src="getApiUrl(existingDocs.find(d => d.type === 'ID_CARD').filePath)" alt="CIN" class="doc-thumbnail" @click="openUrl(getApiUrl(existingDocs.find(d => d.type === 'ID_CARD').filePath))" />
                 </div>
                 <div class="file-drop" :class="{ hasFile: files.idCard }">
                   <input type="file" @change="handleFileChange($event, 'idCard')" accept="image/*,.pdf" />
@@ -542,7 +543,7 @@ const submitDocuments = async () => {
               <div class="upload-item">
                 <label>Diplôme d'État</label>
                 <div v-if="existingDocs.find(d => d.type === 'DIPLOMA')" class="existing-doc-preview">
-                  <img :src="'/api/' + existingDocs.find(d => d.type === 'DIPLOMA').filePath" alt="Diplôme" class="doc-thumbnail" @click="openUrl('/api/' + existingDocs.find(d => d.type === 'DIPLOMA').filePath)" />
+                  <img :src="getApiUrl(existingDocs.find(d => d.type === 'DIPLOMA').filePath)" alt="Diplôme" class="doc-thumbnail" @click="openUrl(getApiUrl(existingDocs.find(d => d.type === 'DIPLOMA').filePath))" />
                 </div>
                 <div class="file-drop" :class="{ hasFile: files.diploma }">
                   <input type="file" @change="handleFileChange($event, 'diploma')" accept="image/*,.pdf" />
@@ -557,7 +558,7 @@ const submitDocuments = async () => {
               <div class="upload-item">
                 <label>Carte Professionnelle / CPS</label>
                 <div v-if="existingDocs.find(d => d.type === 'LICENSE')" class="existing-doc-preview">
-                  <img :src="'/api/' + existingDocs.find(d => d.type === 'LICENSE').filePath" alt="Licence" class="doc-thumbnail" @click="openUrl('/api/' + existingDocs.find(d => d.type === 'LICENSE').filePath)" />
+                  <img :src="getApiUrl(existingDocs.find(d => d.type === 'LICENSE').filePath)" alt="Licence" class="doc-thumbnail" @click="openUrl(getApiUrl(existingDocs.find(d => d.type === 'LICENSE').filePath))" />
                 </div>
                 <div class="file-drop" :class="{ hasFile: files.professionalLicense }">
                   <input type="file" @change="handleFileChange($event, 'professionalLicense')" accept="image/*,.pdf" />

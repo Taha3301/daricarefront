@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { getApiUrl } from '../config/api';
 
 type Service = {
   id: number;
@@ -24,7 +25,7 @@ const fetchServices = async () => {
     const headers: Record<string, string> = { accept: '*/*' };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    const response = await fetch('/api/services', { headers });
+    const response = await fetch(getApiUrl('/services'), { headers });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch services (${response.status})`);

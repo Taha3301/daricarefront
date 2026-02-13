@@ -8,6 +8,12 @@
   <meta name="theme-color" content="#2b69ad" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>daricare</title>
+  <script>
+    // Redirect to hash route if no hash is present
+    if (!window.location.hash) {
+      window.location.replace(window.location.href + '#/');
+    }
+  </script>
 </head>
 
 <body>

@@ -1,8 +1,10 @@
+```
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storage } from '../../utils/storage';
 const localStorage = storage;
 import { io, Socket } from 'socket.io-client';
+import { getApiUrl, SOCKET_URL } from '../../config/api';
 import SidebarProf from './SidebarProf.vue';
 import AgendaComponent from './AgendaComponent.vue';
 import AnalyticsDashboard from './AnalyticsDashboard.vue';
@@ -193,7 +195,7 @@ const fetchProfessionalContent = async () => {
   if (!token) return;
 
   try {
-    const response = await fetch('/api/services/professional/my-content', {
+    const response = await fetch(getApiUrl('/services/professional/my-content'), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': '*/*'
@@ -355,7 +357,7 @@ const subscribeToPushNotifications = async () => {
     // Send the unique Device ID (Subscription) to your backend
     const token = localStorage.getItem('access_token');
     if (token) {
-      await fetch('/api/notifications/subscribe', {
+      await fetch(getApiUrl('/notifications/subscribe'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -417,7 +419,7 @@ const fetchUserProfile = async () => {
   if (!token) return;
 
   try {
-    const response = await fetch('/api/auth/profile', {
+    const response = await fetch(getApiUrl('/auth/profile'), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': '*/*'
@@ -453,7 +455,7 @@ const fetchBookingDetails = async (id: number) => {
   if (!token) return null;
 
   try {
-    const response = await fetch(`/api/bookings/${id}`, {
+    const response = await fetch(getApiUrl(`/bookings/${id}`), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
@@ -474,7 +476,7 @@ const fetchDistance = async (requestId: number) => {
   if (!token || !proId) return;
 
   try {
-    const response = await fetch(`/api/bookings/distance/${requestId}/${proId}`, {
+    const response = await fetch(getApiUrl(`/bookings/distance/${requestId}/${proId}`), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': '*/*'
@@ -499,7 +501,7 @@ const fetchInitialData = async () => {
     // 1. Fetch specific assignments for this professional
     let myAssignments: any[] = [];
     if (proId) {
-      const assignRes = await fetch(`/api/bookings/professional/${proId}/assignments`, {
+      const assignRes = await fetch(getApiUrl(`/bookings/professional/${proId}/assignments`), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'accept': 'application/json'
@@ -512,7 +514,7 @@ const fetchInitialData = async () => {
     }
 
     // 2. Fetch all bookings to cross-reference
-    const response = await fetch('/api/bookings', {
+    const response = await fetch(getApiUrl('/bookings'), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': '*/*'
@@ -575,8 +577,8 @@ const initWebSocket = () => {
   }
 
   console.log('🔌 Initializing WebSocket for:', userSpeciality.value);
-  // By default connects to current origin, Vite proxies /socket.io
-  socket.value = io({
+  // use the standardized SOCKET_URL
+  socket.value = io(SOCKET_URL, {
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
@@ -645,7 +647,7 @@ const fetchPatients = async () => {
 
   isLoading.value = true;
   try {
-    const response = await fetch('/api/patients', {
+    const response = await fetch(getApiUrl('/patients'), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
@@ -705,7 +707,7 @@ const acceptRequest = async (id: number) => {
   if (!token) return;
 
   try {
-    const response = await fetch(`/api/bookings/${id}/accept`, {
+    const response = await fetch(getApiUrl(`/bookings/${id}/accept`), {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -732,7 +734,7 @@ const declineRequest = async (id: number) => {
   if (!token) return;
 
   try {
-    const response = await fetch(`/api/bookings/${id}/deny`, {
+    const response = await fetch(getApiUrl(`/bookings/${id}/deny`), {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -761,7 +763,7 @@ const completeRequest = async (id: number) => {
   if (!confirm('Voulez-vous marquer cette demande comme terminée ?')) return;
 
   try {
-    const response = await fetch(`/api/bookings/${id}/complete`, {
+    const response = await fetch(getApiUrl(`/bookings/${id}/complete`), {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
