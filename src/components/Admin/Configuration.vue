@@ -26,7 +26,7 @@ const handleRegisterAdmin = async () => {
   isLoading.value = true;
 
   try {
-    const response = await fetch('/api/auth/admin/register', {
+    const response = await fetch(getApiUrl('/auth/admin/register'), {
       method: 'POST',
       headers: {
         'accept': '*/*',

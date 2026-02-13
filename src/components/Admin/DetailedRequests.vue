@@ -61,7 +61,7 @@ const fetchDetailedRequests = async () => {
 
   try {
     isLoading.value = true;
-    const response = await fetch('/api/admin/requests/detailed', {
+    const response = await fetch(getApiUrl('/admin/requests/detailed'), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': '*/*'

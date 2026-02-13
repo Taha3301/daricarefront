@@ -32,7 +32,7 @@ const fetchPatients = async () => {
   try {
     isLoading.value = true;
     errorMessage.value = '';
-    const response = await fetch('/api/patients', {
+    const response = await fetch(getApiUrl('/patients'), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
