@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { getApiUrl } from '../../config/api';
 
 const emit = defineEmits(['navigate']);
 
@@ -15,7 +16,7 @@ const handleForgotPassword = async () => {
   isLoading.value = true;
   
   try {
-    const response = await fetch('/api/auth/forgot-password', {
+    const response = await fetch(getApiUrl('/auth/forgot-password'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { getApiUrl } from '../../config/api';
 
 const props = defineProps<{
   token: string;
@@ -29,7 +30,7 @@ const handleResetPassword = async () => {
   isLoading.value = true;
   
   try {
-    const response = await fetch('/api/auth/reset-password', {
+    const response = await fetch(getApiUrl('/auth/reset-password'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -15,7 +15,7 @@ const fetchBookings = async () => {
   try {
     isLoading.value = true;
     errorMessage.value = '';
-    const response = await fetch('/api/admin/requests/summary', {
+    const response = await fetch(getApiUrl('/admin/requests/summary'), {
       headers: {
         'Authorization': `Bearer ${token}`,
         'accept': '*/*'

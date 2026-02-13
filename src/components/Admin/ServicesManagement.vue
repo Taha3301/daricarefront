@@ -42,7 +42,7 @@ const fetchServices = async () => {
   const token = localStorage.getItem('access_token');
   try {
     isLoading.value = true;
-    const response = await fetch('/api/services', {
+    const response = await fetch(getApiUrl('/services'), {
       headers: { 
         'accept': '*/*',
         'Authorization': `Bearer ${token}` 
@@ -61,7 +61,7 @@ const fetchServices = async () => {
 const fetchSoins = async (serviceId: number) => {
   const token = localStorage.getItem('access_token');
   try {
-    const response = await fetch(`/api/soins/service/${serviceId}`, {
+    const response = await fetch(getApiUrl(`/soins/service/${serviceId}`), {
       headers: { 
         'accept': '*/*',
         'Authorization': `Bearer ${token}` 
@@ -114,7 +114,7 @@ const handleDeleteService = async (id: number) => {
   if (!confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) return;
   const token = localStorage.getItem('access_token');
   try {
-    const response = await fetch(`/api/services/${id}`, {
+    const response = await fetch(getApiUrl(`/services/${id}`), {
       method: 'DELETE',
       headers: { 
         'accept': '*/*',
@@ -174,7 +174,7 @@ const handleDeleteSoin = async (id: number) => {
   if (!confirm('Êtes-vous sûr de vouloir supprimer ce soin ?')) return;
   const token = localStorage.getItem('access_token');
   try {
-    const response = await fetch(`/api/soins/${id}`, {
+    const response = await fetch(getApiUrl(`/soins/${id}`), {
       method: 'DELETE',
       headers: { 
         'accept': '*/*',
@@ -200,7 +200,7 @@ const handleSaveContent = async () => {
   if (typeChanged) {
     // Delete old one first
     try {
-      await fetch(`/api/soins/content/${originalType.value}/${contentForm.value.id}`, {
+      await fetch(getApiUrl(`/soins/content/${originalType.value}/${contentForm.value.id}`), {
         method: 'DELETE',
         headers: { 
           'accept': '*/*',
@@ -214,8 +214,8 @@ const handleSaveContent = async () => {
 
   const method = (contentForm.value.id && !typeChanged) ? 'PATCH' : 'POST';
   const url = (contentForm.value.id && !typeChanged)
-    ? `/api/soins/content/${type}/${contentForm.value.id}`
-    : `/api/soins/content/${type}`;
+    ? getApiUrl(`/soins/content/${type}/${contentForm.value.id}`)
+    : getApiUrl(`/soins/content/${type}`);
   
   const payload: any = {
     name: contentForm.value.name,
@@ -227,7 +227,7 @@ const handleSaveContent = async () => {
   }
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(getApiUrl(url), {
       method,
       headers: {
         'accept': '*/*',
@@ -254,7 +254,7 @@ const handleDeleteContent = async (item: any, type: string) => {
   if (!confirm('Êtes-vous sûr de vouloir supprimer ce champ ?')) return;
   const token = localStorage.getItem('access_token');
   try {
-    const response = await fetch(`/api/soins/content/${type}/${item.id}`, {
+    const response = await fetch(getApiUrl(`/soins/content/${type}/${item.id}`), {
       method: 'DELETE',
       headers: { 
         'accept': '*/*',
