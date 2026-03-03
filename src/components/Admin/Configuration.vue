@@ -8,13 +8,16 @@ const showAdminModal = ref(false);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 const success = ref<string | null>(null);
+const showVerifyModal = ref(false);
 
 const adminForm = ref({
+  name: '',
   email: '',
   password: ''
 });
 
 const passwordForm = ref({
+  oldPassword: '',
   newPassword: '',
   confirmPassword: ''
 });
@@ -34,6 +37,7 @@ const handleRegisterAdmin = async () => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        name: adminForm.value.name,
         email: adminForm.value.email,
         password: adminForm.value.password
       })
@@ -42,7 +46,7 @@ const handleRegisterAdmin = async () => {
     if (response.ok) {
       success.value = 'Administrateur enregistré avec succès';
       showAdminModal.value = false;
-      adminForm.value = { email: '', password: '' };
+      adminForm.value = { name: '', email: '', password: '' };
       setTimeout(() => { success.value = null; }, 3000);
     } else {
       const data = await response.json().catch(() => ({}));
@@ -67,35 +71,45 @@ const handleChangePassword = async () => {
     return;
   }
 
-  const token = localStorage.getItem('access_token');
   error.value = null;
   success.value = null;
+  showVerifyModal.value = true;
+};
+
+const confirmChangePassword = async () => {
+  if (!passwordForm.value.oldPassword) {
+    error.value = 'Veuillez entrer votre ancien mot de passe.';
+    return;
+  }
+
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+
   isLoading.value = true;
+  showVerifyModal.value = false;
 
   try {
-    // Note: Using existing reset-password endpoint as requested. 
-    // Usually this requires a specific reset token, but we are attempting 
-    // to use it with the current auth context or as a direct integration.
-    const response = await fetch(getApiUrl('/auth/reset-password'), {
+    const response = await fetch(getApiUrl('/auth/change-password'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'accept': '*/*'
+        'Authorization': `Bearer ${token}`,
+        'accept': 'application/json'
       },
       body: JSON.stringify({
-        token: token, // Using access token as per request implication/verification needed
+        oldPassword: passwordForm.value.oldPassword,
         newPassword: passwordForm.value.newPassword
       })
     });
 
     if (response.ok) {
       success.value = 'Mot de passe modifié avec succès';
-      passwordForm.value = { newPassword: '', confirmPassword: '' };
-      setTimeout(() => { success.value = null; }, 3000);
+      passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' };
+      setTimeout(() => { success.value = null; }, 5000);
     } else {
       const data = await response.json().catch(() => ({}));
       if (response.status === 401) {
-        error.value = 'Session expirée ou token invalide. Veuillez vous reconnecter.';
+        error.value = data.message || 'Ancien mot de passe incorrect ou session expirée.';
       } else {
         error.value = data.message || 'Échec de la modification du mot de passe';
       }
@@ -177,6 +191,10 @@ const handleChangePassword = async () => {
         <h2>Nouveau Administrateur</h2>
         <form @submit.prevent="handleRegisterAdmin" class="admin-form">
           <div class="form-group">
+            <label>Nom complet</label>
+            <input v-model="adminForm.name" type="text" placeholder="Jean Dupont" required />
+          </div>
+          <div class="form-group">
             <label>Email</label>
             <input v-model="adminForm.email" type="email" placeholder="admin@example.com" required />
           </div>
@@ -188,6 +206,32 @@ const handleChangePassword = async () => {
             <button type="button" class="cancel-btn" @click="showAdminModal = false">Annuler</button>
             <button type="submit" class="submit-btn" :disabled="isLoading">
               {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Verification Modal for Old Password -->
+    <div v-if="showVerifyModal" class="modal-overlay" @click.self="showVerifyModal = false">
+      <div class="modal-content">
+        <h2>Vérification de sécurité</h2>
+        <p style="margin-bottom: 1.5rem; color: #64748b;">Veuillez entrer votre mot de passe actuel pour confirmer ce changement.</p>
+        <form @submit.prevent="confirmChangePassword" class="admin-form">
+          <div class="form-group">
+            <label>Ancien mot de passe</label>
+            <input 
+              v-model="passwordForm.oldPassword" 
+              type="password" 
+              placeholder="••••••••" 
+              required 
+              autofocus
+            />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="cancel-btn" @click="showVerifyModal = false">Annuler</button>
+            <button type="submit" class="submit-btn" :disabled="isLoading">
+              {{ isLoading ? 'Confirmation...' : 'Confirmer & Modifier' }}
             </button>
           </div>
         </form>

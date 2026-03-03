@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, nextTick } from 'vue';
 import { getApiUrl } from '../config/api';
+import { useLanguage } from '../composables/useLanguage';
 
 type ChoiceField = {
   id: number;
@@ -38,12 +39,16 @@ type FieldKey = `checkbox:${number}` | `radio:${number}` | `dropdown:${number}` 
 
 const props = defineProps<{
   serviceId: number;
+  initialSoinId?: number;
 }>();
 
 const emit = defineEmits<{
   (e: 'navigate', view: string): void;
   (e: 'save', payload: { serviceId: number; soinId: number; answers: Record<FieldKey, string | string[]> }): void;
 }>();
+
+const { isAr } = useLanguage();
+const tx = (fr: string, ar: string) => isAr.value ? ar : fr;
 
 const isLoading = ref(false);
 const errorMsg = ref<string | null>(null);
@@ -52,6 +57,27 @@ const services = ref<Service[]>([]);
 const service = computed(() => services.value.find((s) => s.id === props.serviceId) ?? null);
 const soins = computed(() => service.value?.soins ?? []);
 
+// Pagination for Soins
+const ITEMS_PER_PAGE = 3;
+const soinsCurrentPage = ref(1);
+const totalSoinPages = computed(() => Math.ceil(soins.value.length / ITEMS_PER_PAGE));
+const paginatedSoins = computed(() => {
+  const start = (soinsCurrentPage.value - 1) * ITEMS_PER_PAGE;
+  return soins.value.slice(start, start + ITEMS_PER_PAGE);
+});
+
+const nextSoinPage = () => {
+  if (soinsCurrentPage.value < totalSoinPages.value) {
+    soinsCurrentPage.value++;
+  }
+};
+
+const prevSoinPage = () => {
+  if (soinsCurrentPage.value > 1) {
+    soinsCurrentPage.value--;
+  }
+};
+
 const isModalOpen = ref(false);
 const activeSoinId = ref<number | null>(null);
 const answers = ref<Record<FieldKey, string | string[]>>({} as any);
@@ -59,13 +85,13 @@ const answers = ref<Record<FieldKey, string | string[]>>({} as any);
 const saved = ref<Array<{ soinId: number; answers: Record<FieldKey, string | string[]> }>>([]);
 
 const currentStep = ref(1);
-const steps = [
-  { id: 1, title: 'Voulez-vous ajouter un autre soin ?' },
-  { id: 2, title: 'Avez-vous une ordonnance ?' },
-  { id: 3, title: 'Où et quand souhaitez-vous faire vos soins ?' },
-  { id: 4, title: 'Qui est le patient ?' },
-  { id: 5, title: 'Récapitulatif de votre demande' },
-];
+const steps = computed(() => [
+  { id: 1, title: tx('Choisissez vos soin/s !', 'اختر خدماتك!') },
+  { id: 2, title: tx('Avez-vous une ordonnance ?', 'هل لديك وصفة طبية؟') },
+  { id: 3, title: tx('Où et quand souhaitez-vous faire vos soins ?', 'أين ومتى تريد تلقي الرعاية؟') },
+  { id: 4, title: tx('Qui est le patient ?', 'من هو المريض؟') },
+  { id: 5, title: tx('Récapitulatif de votre demande', 'ملخص طلبك') },
+]);
 
 const formData = ref({
   hasOrdonnance: '' as string,
@@ -117,6 +143,8 @@ const handleFiles = (e: Event) => {
       formData.value.prescriptionFiles.push(...validFiles);
     }
   }
+  // allow re-selecting the same file(s)
+  input.value = '';
 };
 
 const removeFile = (index: number) => {
@@ -164,6 +192,15 @@ const fetchServices = async () => {
     
     if (!service.value) {
       console.warn('⚠️ Service not found for ID:', props.serviceId);
+    }
+
+    // Auto-open soin if navigated directly from search
+    if (props.initialSoinId) {
+      await nextTick();
+      const soin = soins.value.find(s => s.id === props.initialSoinId);
+      if (soin) {
+        openSoinForm(soin.id);
+      }
     }
   } catch (err: any) {
     console.error('Failed to fetch services:', err);
@@ -250,9 +287,9 @@ const formatSoinAnswers = (soinId: number) => {
   if (savedSoin.answers['visitType'] === 'recurring') {
     const count = savedSoin.answers['frequencyCount'];
     const period = savedSoin.answers['frequencyPeriod'];
-    parts.push(`${count} fois / ${period}`);
+    parts.push(isAr.value ? `${count} مرة / ${period}` : `${count} fois / ${period}`);
   } else {
-    parts.push('Une seule fois');
+    parts.push(isAr.value ? 'مرة واحدة' : 'Une seule fois');
   }
 
   return parts.join(' / ') || '';
@@ -481,14 +518,14 @@ onMounted(() => {
       <!-- Left -->
       <div class="content">
         <header class="header">
-          <button class="btn-back" @click="emit('navigate', 'landing')">← Retour</button>
+          <button class="btn-back" @click="emit('navigate', 'landing')">{{ tx('← Retour', '→ رجوع') }}</button>
           <div class="header-text">
             <h1 class="title">{{ service?.name || 'Service' }}</h1>
             <p class="subtitle">{{ service?.description || 'Choisissez un soin pour continuer.' }}</p>
           </div>
         </header>
 
-        <div v-if="isLoading" class="state">Chargement…</div>
+        <div v-if="isLoading" class="state">{{ tx('Chargement…', 'جار التحميل...') }}</div>
         
         <template v-else-if="service">
           <!-- Global Error Display (Doesn't hide the form) -->
@@ -514,7 +551,7 @@ onMounted(() => {
 
           <!-- Step 1: Voulez-vous ajouter un autre soin ? -->
           <div v-if="currentStep === 1" class="step-content">
-          <h2 class="step-question">Voulez-vous ajouter un autre soin ?</h2>
+          <h2 class="step-question">{{ tx('Choisissez vos soin/s !', 'اختر خدماتك!') }}</h2>
           
           <div v-if="saved.length > 0" class="saved-soins-list">
             <div v-for="savedItem in saved" :key="savedItem.soinId" class="saved-soin-item">
@@ -522,13 +559,13 @@ onMounted(() => {
                 <div class="saved-soin-name">{{ getSoinName(savedItem.soinId) }}</div>
                 <div class="saved-soin-details">{{ formatSoinAnswers(savedItem.soinId) }}</div>
               </div>
-              <button class="btn-modify" @click="editSoin(savedItem.soinId)">Modifier</button>
+              <button class="btn-modify" @click="editSoin(savedItem.soinId)">{{ tx('Modifier', 'تعديل') }}</button>
             </div>
           </div>
           
           <div class="soins-grid">
             <button
-              v-for="soin in soins"
+              v-for="soin in paginatedSoins"
               :key="soin.id"
               class="soin-card"
               :class="{ saved: isSoinSaved(soin.id) }"
@@ -544,28 +581,49 @@ onMounted(() => {
               </div>
               <div class="soin-desc">{{ soin.description || '—' }}</div>
               <div class="soin-cta">
-                <span v-if="isSoinSaved(soin.id)">Déjà ajouté</span>
-                <span v-else>Remplir le formulaire</span>
+                <span v-if="isSoinSaved(soin.id)">{{ tx('Déjà ajouté', 'تمت الإضافة') }}</span>
+                <span v-else>{{ tx('Remplir le formulaire', 'ملء النموذج') }}</span>
               </div>
+            </button>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div v-if="totalSoinPages > 1" class="pagination-controls">
+            <button 
+              class="btn-pagination" 
+              :disabled="soinsCurrentPage === 1" 
+              @click="prevSoinPage"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              Précédent
+            </button>
+            <span class="page-indicator">{{ isAr ? `الصفحة ${soinsCurrentPage} من ${totalSoinPages}` : `Page ${soinsCurrentPage} sur ${totalSoinPages}` }}</span>
+            <button 
+              class="btn-pagination" 
+              :disabled="soinsCurrentPage === totalSoinPages" 
+              @click="nextSoinPage"
+            >
+              {{ tx('Suivant', 'التالي') }}
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </button>
           </div>
           
           <div v-if="saved.length > 0" class="step-actions">
-            <button class="btn-primary" @click="nextStep">Continuer</button>
+            <button class="btn-primary" @click="nextStep">{{ tx('Continuer', 'متابعة') }}</button>
           </div>
         </div>
 
         <!-- Step 2: Avez-vous une ordonnance ? -->
         <div v-else-if="currentStep === 2" class="step-content">
-          <div class="mandatory-notice">* champs obligatoires</div>
-          <h2 class="step-question">Avez-vous une ordonnance ? *</h2>
+          <div class="mandatory-notice">{{ tx('* champs obligatoires', '* حقول إلزامية') }}</div>
+          <h2 class="step-question">{{ tx('Avez-vous une ordonnance ? *', 'هل لديك وصفة طبية؟ *') }}</h2>
           
           <div class="ordonnance-options">
             <label class="option-card" :class="{ active: formData.hasOrdonnance === 'home-mention' }">
               <input type="radio" v-model="formData.hasOrdonnance" value="home-mention" class="hidden-input" />
               <div class="option-content">
                 <div class="radio-circle"></div>
-                <span>Oui, avec mention “à domicile”</span>
+                <span>{{ tx('Oui, avec mention “à domicile”', 'نعم، مع إشارة "في المنزل"') }}</span>
               </div>
             </label>
 
@@ -573,7 +631,7 @@ onMounted(() => {
               <input type="radio" v-model="formData.hasOrdonnance" value="no-mention" class="hidden-input" />
               <div class="option-content">
                 <div class="radio-circle"></div>
-                <span>Oui, sans mention</span>
+                <span>{{ tx('Oui, sans mention', 'نعم، بدون إشارة') }}</span>
               </div>
             </label>
 
@@ -581,24 +639,24 @@ onMounted(() => {
               <input type="radio" v-model="formData.hasOrdonnance" value="none" class="hidden-input" />
               <div class="option-content">
                 <div class="radio-circle"></div>
-                <span>Non</span>
+                <span>{{ tx('Non', 'لا') }}</span>
               </div>
             </label>
           </div>
 
-          <div v-if="formData.hasOrdonnance === 'home-mention'" class="info-box">
+          <div class="info-box">
             <div class="info-icon">i</div>
-            <p>Si vous avez une ordonnance avec mention “à domicile”, l’intervention et le déplacement seront pris en charge par la sécurité sociale et votre mutuelle.</p>
+            <p>{{ tx('Si vous avez une ordonnance avec mention “à domicile”, l’intervention et le déplacement seront pris en charge par la sécurité sociale et votre mutuelle.', 'إذا كان لديك وصفة طبية مع إشارة "في المنزل"، سيتم تغطية التدخل والتنقل من قبل التأمين الصحي.') }}</p>
           </div>
 
-          <!-- Upload section if "Oui" -->
-          <div v-if="formData.hasOrdonnance && formData.hasOrdonnance !== 'none'" class="upload-section">
-            <h3 class="upload-title">Ajoutez votre ordonnance si vous l’avez à disposition (facultatif)</h3>
+          <!-- Upload section (optional) -->
+          <div class="upload-section">
+            <h3 class="upload-title">{{ tx('Ajoutez votre ordonnance si vous l’avez à disposition (facultatif)', 'أضف وصفتك الطبية إن توفرت (اختياري)') }}</h3>
             <div class="upload-area">
               <input type="file" ref="fileInput" class="hidden" multiple accept=".jpg,.jpeg,.png,.pdf" @change="handleFiles" />
               <button class="btn-upload" @click="triggerFileUpload">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                Ajouter un document
+                {{ tx('Ajouter un document', 'إضافة وثيقة') }}
               </button>
               <p class="upload-hint">{{ formData.prescriptionFiles.length }}/6 document(s) - Au format JPG, PNG ou PDF - 6 Mo par fichier</p>
             </div>
@@ -615,59 +673,59 @@ onMounted(() => {
           </div>
 
           <div class="step-actions">
-            <button class="btn-secondary" @click="prevStep">Précédent</button>
-            <button class="btn-primary" @click="nextStep" :disabled="!formData.hasOrdonnance">Continuer</button>
+            <button class="btn-secondary" @click="prevStep">{{ tx('Précédent', 'السابق') }}</button>
+            <button class="btn-primary" @click="nextStep" :disabled="!formData.hasOrdonnance">{{ tx('Continuer', 'متابعة') }}</button>
           </div>
         </div>
 
         <!-- Step 3: Où et quand souhaitez-vous faire vos soins ? -->
         <div v-else-if="currentStep === 3" class="step-content">
-          <div class="mandatory-notice">* champs obligatoires</div>
-          <h2 class="step-question">Où et quand souhaitez-vous faire vos soins ?</h2>
+          <div class="mandatory-notice">{{ tx('* champs obligatoires', '* حقول إلزامية') }}</div>
+          <h2 class="step-question">{{ tx('Où et quand souhaitez-vous faire vos soins ?', 'أين ومتى تريد تلقي الرعاية؟') }}</h2>
           
           <div class="form-group mb-2">
             <div class="label-with-action">
-              <label>Lieu des soins</label>
+              <label>{{ tx('Lieu des soins', 'مكان الرعاية') }}</label>
               <button class="btn-text" :class="{ active: formData.isIndifferent }" @click="formData.isIndifferent = !formData.isIndifferent">
                 <div class="check-box" :class="{ checked: formData.isIndifferent }">
                   <span v-if="formData.isIndifferent">✓</span>
                 </div>
-                Indifférent
+                {{ tx('Indifférent', 'غير مهم') }}
               </button>
             </div>
-            <input v-model="formData.address" type="text" class="form-input" placeholder="Ex: 123 Rue de Médical, Paris" :disabled="formData.isIndifferent" />
+            <input v-model="formData.address" type="text" class="form-input" :placeholder="tx('Ex: 123 Rue de Médical, Paris', 'مثال: شارع التطبيب, تونس')" :disabled="formData.isIndifferent" />
           </div>
 
           <div class="form-group">
-            <label>Date de début des soins</label>
+            <label>{{ tx('Date de début des soins', 'تاريخ البدء') }}</label>
             <input v-model="formData.startDate" type="date" class="form-input" />
           </div>
 
           <div class="form-group">
-            <label>Durée des soins (en jours) *</label>
+            <label>{{ tx('Durée des soins (en jours) *', 'مدة الرعاية (بالأيام) *') }}</label>
             <div class="duration-pills">
               <label v-for="d in ['1', '7', '10', '15', '30']" :key="d" class="pill-option" :class="{ active: formData.durationMode === d }">
                 <input type="radio" v-model="formData.durationMode" :value="d" class="hidden" />
-                <span>{{ d }} jour{{ d !== '1' ? 's' : '' }}</span>
+                <span>{{ d }} {{ tx('jour', 'يوم') }}{{ !isAr && d !== '1' ? 's' : '' }}</span>
               </label>
               <label class="pill-option" :class="{ active: formData.durationMode === 'long' }">
                 <input type="radio" v-model="formData.durationMode" value="long" class="hidden" />
-                <span>Longue durée (60 jours ou +)</span>
+                <span>{{ tx('Longue durée (60 jours ou +)', 'مدة طويلة (60 يوم أو أكثر)') }}</span>
               </label>
               <label class="pill-option" :class="{ active: formData.durationMode === 'custom' }">
                 <input type="radio" v-model="formData.durationMode" value="custom" class="hidden" />
-                <span>Personnaliser la durée</span>
+                <span>{{ tx('Personnaliser la durée', 'تخصيص المدة') }}</span>
               </label>
             </div>
             <div v-if="formData.durationMode === 'custom'" class="custom-duration-input mt-1">
               <input v-model="formData.customDuration" type="number" min="1" class="form-input mini" />
-              <span class="unit">jours</span>
+              <span class="unit">{{ tx('jours', 'أيام') }}</span>
             </div>
           </div>
 
           <div class="form-group availabilities">
             <div class="label-row">
-              <label>Disponibilités horaires *</label>
+              <label>{{ tx('Disponibilités horaires *', 'التوفر الزمني *') }}</label>
             </div>
             <div class="info-tag mb-1">
               L’heure de passage précise sera à définir avec le professionnel de santé
@@ -675,12 +733,12 @@ onMounted(() => {
 
             <div v-if="formData.availabilitySlots.length === 0" class="add-slot-box" @click="addSlot">
               <div class="add-icon">+</div>
-              <span>Ajouter un créneau de passage</span>
+              <span>{{ tx('Ajouter un créneau de passage', 'إضافة فترة زمنية') }}</span>
             </div>
 
             <div v-else class="slot-card">
               <div class="slot-card-header">
-                <div class="slot-title">Votre créneau : <span>{{ formData.availabilitySlots[0]?.start }} — {{ formData.availabilitySlots[0]?.end }}</span></div>
+                <div class="slot-title">{{ tx('Votre créneau :', 'فترتك الزمنية:') }} <span>{{ formData.availabilitySlots[0]?.start }} — {{ formData.availabilitySlots[0]?.end }}</span></div>
                 <button class="btn-delete" @click="removeSlot" title="Supprimer">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
@@ -727,8 +785,8 @@ onMounted(() => {
           </div>
 
           <div class="step-actions">
-            <button class="btn-secondary" @click="prevStep">Précédent</button>
-            <button class="btn-primary" @click="nextStep" :disabled="(!formData.address && !formData.isIndifferent) || !formData.startDate || formData.availabilitySlots.length === 0">Continuer</button>
+            <button class="btn-secondary" @click="prevStep">{{ tx('Précédent', 'السابق') }}</button>
+            <button class="btn-primary" @click="nextStep" :disabled="(!formData.address && !formData.isIndifferent) || !formData.startDate || formData.availabilitySlots.length === 0">{{ tx('Continuer', 'متابعة') }}</button>
           </div>
         </div>
 
@@ -741,79 +799,79 @@ onMounted(() => {
           </p>
 
           <div class="form-group">
-            <label>Civilité *</label>
+            <label>{{ tx('Civilité *', 'اللقب *') }}</label>
             <div class="civility-group">
               <label class="civility-option" :class="{ active: formData.patientCivility === 'Mme' }">
                 <input type="radio" v-model="formData.patientCivility" value="Mme" class="hidden" />
-                <span>Madame</span>
+                <span>{{ tx('Madame', 'السيدة') }}</span>
               </label>
               <label class="civility-option" :class="{ active: formData.patientCivility === 'M' }">
                 <input type="radio" v-model="formData.patientCivility" value="M" class="hidden" />
-                <span>Monsieur</span>
+                <span>{{ tx('Monsieur', 'السيد') }}</span>
               </label>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label>Prénom *</label>
-              <input v-model="formData.patientFirstname" type="text" class="form-input" placeholder="Ex: Jean" />
+              <label>{{ tx('Prénom *', 'الاسم الأول *') }}</label>
+              <input v-model="formData.patientFirstname" type="text" class="form-input" :placeholder="tx('Ex: Jean', 'مثال: محمد')" />
             </div>
             <div class="form-group">
-              <label>Nom *</label>
-              <input v-model="formData.patientLastname" type="text" class="form-input" placeholder="Ex: Dupont" />
+              <label>{{ tx('Nom *', 'اللقب *') }}</label>
+              <input v-model="formData.patientLastname" type="text" class="form-input" :placeholder="tx('Ex: Dupont', 'مثال: بن سالم')" />
             </div>
           </div>
 
           <div class="form-group">
-            <label>Date de naissance *</label>
+            <label>{{ tx('Date de naissance *', 'تاريخ الميلاد *') }}</label>
             <input v-model="formData.patientBirthDate" type="date" class="form-input" />
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label>Numéro de téléphone *</label>
-              <input v-model="formData.patientPhone" type="tel" class="form-input" placeholder="06 00 00 00 00" />
-              <p class="field-hint">Le professionnel vous contactera sur ce numéro pour convenir d'un rendez-vous</p>
+              <label>{{ tx('Numéro de téléphone *', 'رقم الهاتف *') }}</label>
+              <input v-model="formData.patientPhone" type="tel" class="form-input" :placeholder="tx('06 00 00 00 00', '2X XXX XXX')" />
+              <p class="field-hint">{{ tx('Le professionnel vous contactera sur ce numéro pour convenir d\'un rendez-vous', 'سيتصل بك المتخصص على هذا الرقم لتحديد الموعد') }}</p>
             </div>
             <div class="form-group">
-              <label>Confirmez le téléphone *</label>
-              <input v-model="formData.patientPhoneConfirm" type="tel" class="form-input" placeholder="06 00 00 00 00" />
+              <label>{{ tx('Confirmez le téléphone *', 'Téléphone *') }}</label>
+              <input v-model="formData.patientPhoneConfirm" type="tel" class="form-input" :placeholder="tx('06 00 00 00 00', '2X XXX XXX')" />
             </div>
           </div>
 
           <div class="form-group">
-            <label>Email</label>
-            <input v-model="formData.patientEmail" type="email" class="form-input" placeholder="email@exemple.com" />
+            <label>{{ tx('Email', 'البريد الإلكتروني') }}</label>
+            <input v-model="formData.patientEmail" type="email" class="form-input" :placeholder="tx('email@exemple.com', 'example@email.com')" />
           </div>
 
           <div class="form-group">
             <div class="label-row">
-              <label>Adresse *</label>
-              <button class="btn-link" @click="getLocation">Je ne trouve pas mon adresse</button>
+              <label>{{ tx('Adresse *', 'العنوان *') }}</label>
+              <button class="btn-link" @click="getLocation">{{ tx('Je ne trouve pas mon adresse', 'لا أجد عنواني') }}</button>
             </div>
             <input v-model="formData.address" type="text" class="form-input" placeholder="Ex: 123 Rue de la Santé, Paris" />
             <p class="field-hint">Lieu où les soins “à domicile” seront réalisés</p>
           </div>
 
           <div class="form-group">
-            <label>Complément d'adresse (facultatif)</label>
-            <input v-model="formData.addressComplement" type="text" class="form-input" placeholder="Bâtiment, code, étage..." />
-            <p class="field-hint">Indiquez les informations pour simplifier l'accès au lieu de rendez-vous (bâtiment, codes, étage, etc...)</p>
+            <label>{{ tx('Complément d\'adresse (facultatif)', 'معلومات إضافية للعنوان (اختياري)') }}</label>
+            <input v-model="formData.addressComplement" type="text" class="form-input" :placeholder="tx('Bâtiment, code, étage...', 'مبنى، رمز، طابق...')" />
+            <p class="field-hint">{{ tx('Indiquez les informations pour simplifier l\'accès au lieu de rendez-vous (bâtiment, codes, étage, etc...)', 'أضف تفاصيل لتسهيل الوصول (مبنى، رموز، طابق، إلخ...)') }}</p>
           </div>
 
           <div class="step-actions">
-            <button class="btn-secondary" @click="prevStep">Précédent</button>
-            <button class="btn-primary" @click="nextStep" :disabled="!formData.patientFirstname || !formData.patientLastname || !formData.patientBirthDate || !formData.patientPhone || (!formData.address && !formData.isIndifferent)">Continuer</button>
+            <button class="btn-secondary" @click="prevStep">{{ tx('Précédent', 'السابق') }}</button>
+            <button class="btn-primary" @click="nextStep" :disabled="!formData.patientFirstname || !formData.patientLastname || !formData.patientBirthDate || !formData.patientPhone || (!formData.address && !formData.isIndifferent)">{{ tx('Continuer', 'متابعة') }}</button>
           </div>
         </div>
 
         <!-- Step 5: Récapitulatif de votre demande -->
         <div v-else-if="currentStep === 5" class="step-content">
-          <h2 class="step-question">Récapitulatif de votre demande</h2>
+          <h2 class="step-question">{{ tx('Récapitulatif de votre demande', 'ملخص طلبك') }}</h2>
           <div class="summary-section">
             <div class="summary-item">
-              <strong>Soins demandés:</strong>
+              <strong>{{ tx('Soins demandés:', 'الرعاية المطلوبة:') }}</strong>
               <div class="summary-value">
                 <div v-for="savedItem in saved" :key="savedItem.soinId" class="summary-soin">
                   {{ getSoinName(savedItem.soinId) }} - {{ formatSoinAnswers(savedItem.soinId) }}
@@ -821,71 +879,71 @@ onMounted(() => {
               </div>
             </div>
             <div class="summary-item">
-              <strong>Ordonnance:</strong>
+              <strong>{{ tx('Ordonnance:', 'الوصفة الطبية:') }}</strong>
               <div class="summary-value">
-                {{ formData.hasOrdonnance === 'home-mention' ? 'Oui, avec mention “à domicile”' : 
-                   formData.hasOrdonnance === 'no-mention' ? 'Oui, sans mention' : 'Non' }}
+                {{ formData.hasOrdonnance === 'home-mention' ? tx('Oui, avec mention “à domicile”', 'نعم، مع إشارة "في المنزل"') : 
+                   formData.hasOrdonnance === 'no-mention' ? tx('Oui, sans mention', 'نعم، بدون إشارة') : tx('Non', 'لا') }}
                 <div v-if="formData.prescriptionFiles.length > 0" class="summary-files">
-                  ({{ formData.prescriptionFiles.length }} document(s) joint(s))
+                  ({{ formData.prescriptionFiles.length }} {{ tx('document(s) joint(s)', 'وثيقة (وثائق) مرفقة') }})
                 </div>
               </div>
             </div>
             <div class="summary-item">
-              <strong>Lieu:</strong>
-              <div class="summary-value">{{ formData.isIndifferent ? 'Indifférent' : formData.address }}</div>
+              <strong>{{ tx('Lieu:', 'المكان:') }}</strong>
+              <div class="summary-value">{{ formData.isIndifferent ? tx('Indifférent', 'غير مهم') : formData.address }}</div>
             </div>
             <div class="summary-item">
-              <strong>Début & Durée:</strong>
+              <strong>{{ tx('Début & Durée:', 'البداية والمدة:') }}</strong>
               <div class="summary-value">
-                Le {{ formData.startDate }} pour {{ formData.durationMode === 'custom' ? formData.customDuration : (formData.durationMode === 'long' ? '60+' : formData.durationMode) }} jour(s)
+                {{ isAr ? 'بتاريخ' : 'Le' }} {{ formData.startDate }} {{ isAr ? 'لمدة' : 'pour' }} {{ formData.durationMode === 'custom' ? formData.customDuration : (formData.durationMode === 'long' ? '60+' : formData.durationMode) }} {{ tx('jour(s)', 'يوم (أيام)') }}
               </div>
             </div>
             <div class="summary-item">
-              <strong>Disponibilité:</strong>
+              <strong>{{ tx('Disponibilité:', 'الفترة الزمنية:') }}</strong>
               <div class="summary-value">
                 <div v-if="formData.availabilitySlots.length > 0">
-                  {{ formData.availabilitySlots[0]?.start }} à {{ formData.availabilitySlots[0]?.end }}
+                  {{ formData.availabilitySlots[0]?.start }} {{ tx('à', 'إلى') }} {{ formData.availabilitySlots[0]?.end }}
                 </div>
               </div>
             </div>
             <div class="summary-item">
-              <strong>Patient:</strong>
+              <strong>{{ tx('Patient:', 'المريض:') }}</strong>
               <div class="summary-value">
                 {{ formData.patientCivility }} {{ formData.patientFirstname }} {{ formData.patientLastname }}<br/>
-                Né(e) le {{ formData.patientBirthDate }}<br/>
-                Tél: {{ formData.patientPhone }}<br/>
-                Email: {{ formData.patientEmail }}
+                {{ tx('Né(e) le', 'تاريخ الميلاد:') }} {{ formData.patientBirthDate }}<br/>
+                {{ tx('Tél:', 'هاتف:') }} {{ formData.patientPhone }}<br/>
+                {{ tx('Email:', 'بريد:') }} {{ formData.patientEmail }}
               </div>
             </div>
             <div v-if="formData.addressComplement" class="summary-item">
-              <strong>Complément d'adresse:</strong>
+              <strong>{{ tx('Complément d\'adresse:', 'معلومات إضافية:') }}</strong>
               <div class="summary-value">{{ formData.addressComplement }}</div>
             </div>
 
             <div v-if="totalPrice > 0" class="summary-total-card">
-              <div class="total-label">Montant total estimé</div>
+              <div class="total-label">{{ tx('Montant total estimé', 'المبلغ الإجمالي المقدر') }}</div>
               <div class="total-amount">{{ totalPrice }} DT</div>
-              <p class="total-notice">Le paiement s'effectue directement auprès du professionnel de santé.</p>
+              <p class="total-notice">{{ tx('Le paiement s\'effectue directement auprès du professionnel de santé.', 'الدفع يتم مباشرة مع المتخصص الصحي.') }}</p>
             </div>
           </div>
           <div class="step-actions">
-            <button class="btn-secondary" @click="prevStep" :disabled="isSubmitting">Précédent</button>
+            <button class="btn-secondary" @click="prevStep" :disabled="isSubmitting">{{ tx('Précédent', 'السابق') }}</button>
             <button class="btn-primary" @click="submitRequest" :disabled="isSubmitting">
-              {{ isSubmitting ? 'Envoi en cours...' : 'Confirmer la demande' }}
+              {{ isSubmitting ? tx('Envoi en cours...', 'جار الإرسال...') : tx('Confirmer la demande', 'تأكيد الطلب') }}
             </button>
           </div>
           <div v-if="errorMsg" class="state error mt-1">{{ errorMsg }}</div>
         </div>
         </template>
         <div v-else class="state">
-          <p>Désolé, ce service est introuvable ou n'existe plus.</p>
-          <button class="btn-primary mt-1" @click="emit('navigate', 'landing')">Retour à l'accueil</button>
+          <p>{{ tx('Désolé, ce service est introuvable ou n\'existe plus.', 'عذراً، هذه الخدمة غير موجودة أو لم تعد متاحة.') }}</p>
+          <button class="btn-primary mt-1" @click="emit('navigate', 'landing')">{{ tx('Retour à l\'accueil', 'العودة للرئيسية') }}</button>
         </div>
       </div>
 
       <!-- Right Stepper -->
       <aside class="stepper">
-        <div class="stepper-title">Étapes</div>
+        <div class="stepper-title">{{ tx('Étapes', 'الخطوات') }}</div>
         <div class="stepper-track">
           <div
             v-for="step in steps"
@@ -902,11 +960,11 @@ onMounted(() => {
         </div>
 
         <div class="stepper-hint">
-          <div v-if="currentStep === 1">Ajoutez un ou plusieurs soins, puis continuez.</div>
-          <div v-else-if="currentStep === 2">Indiquez si vous avez une ordonnance.</div>
-          <div v-else-if="currentStep === 3">Renseignez le lieu et la date des soins.</div>
-          <div v-else-if="currentStep === 4">Indiquez les informations du patient.</div>
-          <div v-else>Vérifiez votre récapitulatif avant de confirmer.</div>
+          <div v-if="currentStep === 1">{{ tx('Ajoutez un ou plusieurs soins, puis continuez.', 'أضف خدمة أو أكثر، ثم تابع.') }}</div>
+          <div v-else-if="currentStep === 2">{{ tx('Indiquez si vous avez une ordonnance.', 'أشر إلى ما إذا كان لديك وصفة طبية.') }}</div>
+          <div v-else-if="currentStep === 3">{{ tx('Renseignez le lieu et la date des soins.', 'حدد مكان وتاريخ الرعاية.') }}</div>
+          <div v-else-if="currentStep === 4">{{ tx('Indiquez les informations du patient.', 'أدخل معلومات المريض.') }}</div>
+          <div v-else>{{ tx('Vérifiez votre récapitulatif avant de confirmer.', 'راجع ملخصك قبل التأكيد.') }}</div>
         </div>
       </aside>
     </div>
@@ -917,7 +975,7 @@ onMounted(() => {
         <div class="modal-header">
           <div>
             <div class="modal-title">{{ activeSoin?.name }}</div>
-            <div class="modal-subtitle">{{ activeSoin?.description || 'Renseignez les champs ci-dessous.' }}</div>
+            <div class="modal-subtitle">{{ activeSoin?.description || tx('Renseignez les champs ci-dessous.', 'أكمل الحقول أدناه.') }}</div>
           </div>
           <button class="btn-close" @click="closeModal" aria-label="Fermer">✕</button>
         </div>
@@ -926,7 +984,7 @@ onMounted(() => {
           <!-- Checkboxes FIRST -->
           <template v-if="activeSoin?.checkboxes && activeSoin.checkboxes.length > 0">
             <div v-for="field in activeSoin.checkboxes" :key="`cb-${field.id}`" class="field">
-              <div class="field-label">{{ field.name }} <span class="badge">Multiple</span></div>
+              <div class="field-label">{{ field.name }} <span class="badge">{{ tx('Multiple', 'متعدد') }}</span></div>
               <div class="choices">
                 <label v-for="choice in field.choices" :key="choice" class="pill" :class="{ active: (answers[`checkbox:${field.id}`] as string[])?.includes(choice) }">
                   <input type="checkbox" class="hidden" :value="choice" v-model="answers[`checkbox:${field.id}`]" />
@@ -939,7 +997,7 @@ onMounted(() => {
           <!-- Radios SECOND (always after checkboxes) -->
           <template v-if="activeSoin?.radios && activeSoin.radios.length > 0">
             <div v-for="field in activeSoin.radios" :key="`rd-${field.id}`" class="field">
-              <div class="field-label">{{ field.name }} <span class="badge">Unique</span></div>
+              <div class="field-label">{{ field.name }} <span class="badge">{{ tx('Unique', 'واحد') }}</span></div>
               <div class="choices">
                 <label v-for="choice in field.choices" :key="choice" class="pill" :class="{ active: answers[`radio:${field.id}`] === choice }">
                   <input
@@ -958,9 +1016,9 @@ onMounted(() => {
           <!-- Dropdowns THIRD -->
           <template v-if="activeSoin?.dropdowns && activeSoin.dropdowns.length > 0">
             <div v-for="field in activeSoin.dropdowns" :key="`dr-${field.id}`" class="field">
-              <div class="field-label">{{ field.name }} <span class="badge">Liste</span></div>
+              <div class="field-label">{{ field.name }} <span class="badge">{{ tx('Liste', 'قائمة') }}</span></div>
               <select v-model="answers[`dropdown:${field.id}`]" class="select">
-                <option value="" disabled>Choisir…</option>
+                <option value="" disabled>{{ tx('Choisir…', 'اختر…') }}</option>
                 <option v-for="choice in field.choices" :key="choice" :value="choice">{{ choice }}</option>
               </select>
             </div>
@@ -969,20 +1027,20 @@ onMounted(() => {
           <!-- Texts FOURTH -->
           <template v-if="activeSoin?.texts && activeSoin.texts.length > 0">
             <div v-for="field in activeSoin.texts" :key="`tx-${field.id}`" class="field">
-              <div class="field-label">{{ field.name }} <span class="badge">Texte</span></div>
-              <input v-model="answers[`text:${field.id}`]" class="input" type="text" placeholder="Votre réponse…" />
+              <div class="field-label">{{ field.name }} <span class="badge">{{ tx('Texte', 'نص') }}</span></div>
+              <input v-model="answers[`text:${field.id}`]" class="input" type="text" :placeholder="tx('Votre réponse…', 'إجابتك…')" />
             </div>
           </template>
 
           <!-- Visit Frequency Section -->
           <div class="field frequency-section">
-            <div class="field-label">Le professionnel doit passer *</div>
+            <div class="field-label">{{ tx('Le professionnel doit passer *', 'يجب أن يمر المتخصص *') }}</div>
             <div class="frequency-options">
               <label class="radio-card" :class="{ active: answers['visitType'] === 'once' }">
                 <input type="radio" v-model="answers['visitType']" value="once" class="hidden" />
                 <div class="radio-content">
                   <div class="radio-circle"></div>
-                  <span>Une seule fois</span>
+                  <span>{{ tx('Une seule fois', 'مرة واحدة') }}</span>
                 </div>
               </label>
 
@@ -990,7 +1048,7 @@ onMounted(() => {
                 <input type="radio" v-model="answers['visitType']" value="recurring" class="hidden" />
                 <div class="radio-content">
                   <div class="radio-circle"></div>
-                  <span>Soin récurrent</span>
+                  <span>{{ tx('Soin récurrent', 'رعاية متكررة') }}</span>
                 </div>
               </label>
             </div>
@@ -998,19 +1056,19 @@ onMounted(() => {
             <div v-if="answers['visitType'] === 'recurring'" class="recurring-details">
               <div class="frequency-grid">
                 <div class="frequency-subgroup">
-                  <div class="mini-label">Nombre de passages</div>
+                  <div class="mini-label">{{ tx('Nombre de passages', 'عدد الزيارات') }}</div>
                   <div class="pill-group">
                     <label v-for="n in ['1', '2', '3']" :key="n" class="mini-pill" :class="{ active: answers['frequencyCount'] === n }">
                       <input type="radio" v-model="answers['frequencyCount']" :value="n" class="hidden" />
-                      <span>{{ n }} fois</span>
+                      <span>{{ n }} {{ tx('fois', 'مرة') }}</span>
                     </label>
                   </div>
                 </div>
 
                 <div class="frequency-subgroup">
-                  <div class="mini-label">Par *</div>
+                  <div class="mini-label">{{ tx('Par *', 'في كل *') }}</div>
                   <div class="pill-group">
-                    <label v-for="p in ['jour', 'semaine', 'mois']" :key="p" class="mini-pill" :class="{ active: answers['frequencyPeriod'] === p }">
+                    <label v-for="p in [tx('jour','يوم'), tx('semaine','أسبوع'), tx('mois','شهر')]" :key="p" class="mini-pill" :class="{ active: answers['frequencyPeriod'] === p }">
                       <input type="radio" v-model="answers['frequencyPeriod']" :value="p" class="hidden" />
                       <span>{{ p }}</span>
                     </label>
@@ -1022,8 +1080,8 @@ onMounted(() => {
         </div>
 
         <div class="modal-footer">
-          <button class="btn-secondary" @click="closeModal">Annuler</button>
-          <button class="btn-primary" @click="saveModal">Save</button>
+          <button class="btn-secondary" @click="closeModal">{{ tx('Annuler', 'إلغاء') }}</button>
+          <button class="btn-primary" @click="saveModal">{{ tx('Enregistrer', 'حفظ') }}</button>
         </div>
       </div>
     </div>
@@ -1037,7 +1095,7 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 2rem;
+  padding: 100px 2rem 2rem;
   overflow-x: hidden;
   box-sizing: border-box;
 }
@@ -1100,8 +1158,52 @@ onMounted(() => {
 
 .soins-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 1rem;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 2rem 0;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-weight: 800;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  border-color: #2b69ad;
+  color: #2b69ad;
+  background: #f0f7ff;
+}
+
+.btn-pagination:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  font-weight: 800;
+  color: #64748b;
+  font-size: 0.9rem;
 }
 
 .soin-card {
@@ -2262,7 +2364,7 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .page {
-    padding: 1rem 0.75rem;
+    padding: 90px 1rem 2rem;
   }
 
   .layout {
@@ -2311,14 +2413,16 @@ onMounted(() => {
   }
 
   .m-step-info {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 800;
     color: #2b69ad;
     text-align: left;
     margin-bottom: 0.25rem;
     position: relative;
     white-space: normal;
-    line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.2;
   }
 
   .header {
@@ -2348,7 +2452,26 @@ onMounted(() => {
   }
 
   .soin-card {
-    padding: 1.25rem;
+    padding: 1.15rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .soin-name {
+    font-size: 1rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .pagination-controls {
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.75rem;
+  }
+
+  .btn-pagination {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
   }
 
   .step-actions {

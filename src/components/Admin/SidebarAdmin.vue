@@ -9,6 +9,10 @@ const props = defineProps({
   isOpen: {
     type: Boolean,
     default: false
+  },
+  superadmin: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -104,6 +108,16 @@ const handleLogout = () => {
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Configuration
       </button>
+
+      <!-- Superadmin only -->
+      <button
+        v-if="superadmin"
+        :class="['nav-item', 'superadmin-item', { active: activeTab === 'admin-management' }]"
+        @click="handleNavigate('admin-management')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Gestion des Administrateurs
+      </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -169,6 +183,10 @@ const handleLogout = () => {
 
 .nav-item:hover { background: #f8fafc; color: #0f172a; transform: translateX(4px); }
 .nav-item.active { background: rgba(43, 105, 173, 0.05); color: #2b69ad; }
+
+.superadmin-item { border-top: 1px solid #f1f5f9; margin-top: 0.5rem; padding-top: 0.75rem; }
+.superadmin-item.active { background: rgba(124, 58, 237, 0.06); color: #7c3aed; }
+.superadmin-item:hover { color: #7c3aed; }
 
 .sidebar-footer { margin-top: auto; padding-top: 1rem; padding-bottom: 2rem; border-top: 1px solid #f1f5f9; }
 

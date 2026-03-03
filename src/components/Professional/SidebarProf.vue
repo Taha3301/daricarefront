@@ -79,6 +79,10 @@ const handleNavigate = (page: string) => {
         <span class="nav-icon">📊</span>
         <span class="nav-label">Analyses</span>
       </a>
+      <a href="#" class="nav-item" :class="{ active: activeView === 'settings' }" @click.prevent="handleNavigate('settings')">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Paramètres</span>
+      </a>
       <a href="#" class="nav-item logout" @click.prevent="handleLogout">
         <span class="nav-icon">🚪</span>
         <span class="nav-label">Quitter</span>

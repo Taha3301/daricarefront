@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useLanguage } from '../../composables/useLanguage';
 import { getApiUrl } from '../../config/api';
 import { storage } from '../../utils/storage';
+import logoUrl from '../../assets/LOGO H.png';
+
+const { t, currentLang } = useLanguage();
 
 const emit = defineEmits(['navigate']);
 
@@ -43,18 +47,30 @@ const handleLogin = async () => {
 
     // Store token and user info
     storage.clear(); // Clear existing to avoid mixups
-    
+
     storage.setItem('access_token', data.access_token, rememberMe.value);
-    const userId = data.id || (data.user && data.user.id);
-    if (userId) {
-      console.log('Storing user_id:', userId);
-      storage.setItem('user_id', userId, rememberMe.value);
-    } else {
-      console.warn('Login successful but no ID found in response:', data);
+
+    // Get user ID: prefer explicit field, fall back to JWT sub claim
+    let userId = data.id || (data.user && data.user.id);
+    if (!userId && data.access_token) {
+      try {
+        const payload = JSON.parse(atob(data.access_token.split('.')[1]));
+        if (payload.sub) userId = payload.sub;
+      } catch {
+        console.warn('Could not decode JWT for user_id');
+      }
     }
+    if (userId) {
+      storage.setItem('user_id', String(userId), rememberMe.value);
+      console.log('Stored user_id:', userId);
+    } else {
+      console.warn('Login successful but no ID found in response or token:', data);
+    }
+
     storage.setItem('user_role', data.role, rememberMe.value);
-    storage.setItem('user_name', data.name, rememberMe.value);
+    storage.setItem('user_name', data.name || '', rememberMe.value);
     storage.setItem('user_status', data.status, rememberMe.value);
+    storage.setItem('superadmin', data.superadmin ? 'true' : 'false', rememberMe.value);
 
     if (data.status === 'PENDING') {
       emit('navigate', 'verification');
@@ -68,7 +84,7 @@ const handleLogin = async () => {
     }
   } catch (err: any) {
     console.error('Login error:', err);
-    errorMessage.value = err.message || 'Connection failed. Please try again.';
+    errorMessage.value = err.message || (currentLang.value === 'ar' ? 'فشل الاتصال. يرجى المحاولة مرة أخرى.' : 'Connection failed. Please try again.');
   } finally {
     isLoading.value = false;
   }
@@ -81,24 +97,24 @@ const handleLogin = async () => {
     <div class="login-info-side">
       <div class="info-content">
         <div class="brand-badge" @click="emit('navigate', 'landing')" style="cursor: pointer;">
-          <img src="../../assets/LOGO H.png" alt="daricare logo" class="brand-logo-img" />
+          <img :src="logoUrl" alt="daricare logo" class="brand-logo-img" />
         </div>
-        <h1>L'excellence des soins, <br/>à votre service.</h1>
-        <p>Rejoignez notre réseau de professionnels de santé et gérez vos rendez-vous en toute simplicité.</p>
+        <h1>{{ t.login_title }}</h1>
+        <p>{{ t.login_subtitle }}</p>
         
         <div class="stats-grid">
           <div class="stat-item">
             <span class="stat-value">10k+</span>
-            <span class="stat-label">Patients</span>
+            <span class="stat-label">{{ t.login_stats_patients }}</span>
           </div>
           <div class="stat-item">
             <span class="stat-value">500+</span>
-            <span class="stat-label">IDEL</span>
+            <span class="stat-label">{{ t.login_stats_idel }}</span>
           </div>
         </div>
 
         <div class="support-message">
-          <p>Besoin d'aide ? <a href="#">Contactez notre support</a></p>
+          <p>{{ t.login_support }} <a href="#">{{ t.login_contact_support }}</a></p>
         </div>
       </div>
     </div>
@@ -107,8 +123,8 @@ const handleLogin = async () => {
     <div class="login-form-side">
       <div class="login-card">
         <div class="login-header">
-          <h1>Bon retour</h1>
-          <p>Veuillez entrer vos coordonnées pour vous connecter.</p>
+          <h1>{{ t.login_welcome }}</h1>
+          <p>{{ t.login_fields_subtitle }}</p>
         </div>
 
         <!-- Error Message -->
@@ -118,7 +134,7 @@ const handleLogin = async () => {
 
         <form @submit.prevent="handleLogin" class="login-form">
           <div class="input-group">
-            <label for="email">Email</label>
+            <label for="email">{{ t.login_email_label }}</label>
             <div class="input-wrapper">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -136,7 +152,7 @@ const handleLogin = async () => {
           </div>
 
           <div class="input-group">
-            <label for="password">Mot de passe</label>
+            <label for="password">{{ t.login_password_label }}</label>
             <div class="input-wrapper">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -173,18 +189,18 @@ const handleLogin = async () => {
             <label class="checkbox-container">
               <input type="checkbox" v-model="rememberMe" :disabled="isLoading">
               <span class="checkmark"></span>
-              Se souvenir de moi
+              {{ t.login_remember_me }}
             </label>
-            <a href="#" class="forgot-link" @click.prevent="emit('navigate', 'forgot-password')">Mot de passe oublié ?</a>
+            <a href="#" class="forgot-link" @click.prevent="emit('navigate', 'forgot-password')">{{ t.login_forgot_password }}</a>
           </div>
 
           <button type="submit" class="login-button" :disabled="isLoading">
-            {{ isLoading ? 'Connexion...' : 'Se connecter' }}
+            {{ isLoading ? t.login_loading : t.login_btn }}
           </button>
         </form>
 
         <div class="login-footer">
-          <p>Vous n'avez pas de compte ? <a href="#" @click.prevent="emit('navigate', 'signup')">En créer un</a></p>
+          <p>{{ t.login_no_account }} <a href="#" @click.prevent="emit('navigate', 'signup')">{{ t.login_create_account }}</a></p>
         </div>
       </div>
     </div>

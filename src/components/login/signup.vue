@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useLanguage } from '../../composables/useLanguage';
 import { getApiUrl } from '../../config/api';
 import { storage } from '../../utils/storage';
+import logoUrl from '../../assets/LOGO H.png';
 
+const { t, currentLang } = useLanguage();
 const emit = defineEmits(['navigate']);
 
 const name = ref('');
@@ -18,7 +21,7 @@ const handleSignup = async () => {
   errorMessage.value = '';
   
   if (password.value !== confirmPassword.value) {
-    errorMessage.value = 'Les mots de passe ne correspondent pas.';
+    errorMessage.value = currentLang.value === 'ar' ? 'كلمات المرور غير متطابقة.' : 'Les mots de passe ne correspondent pas.';
     return;
   }
 
@@ -53,11 +56,11 @@ const handleSignup = async () => {
       storage.setItem('access_token', data.access_token, rememberMe.value);
     }
 
-    alert('Compte créé avec succès ! Veuillez vous connecter.');
+    alert(currentLang.value === 'ar' ? 'تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.' : 'Compte créé avec succès ! Veuillez vous connecter.');
     emit('navigate', 'login');
   } catch (err: any) {
     console.error('Signup error:', err);
-    errorMessage.value = err.message || 'La connexion a échoué. Veuillez réessayer.';
+    errorMessage.value = err.message || (currentLang.value === 'ar' ? 'فشل الاتصال. يرجى المحاولة مرة أخرى.' : 'La connexion a échoué. Veuillez réessayer.');
   } finally {
     isLoading.value = false;
   }
@@ -70,23 +73,23 @@ const handleSignup = async () => {
     <div class="signup-info-side">
       <div class="info-content">
         <div class="brand-badge" @click="emit('navigate', 'landing')" style="cursor: pointer;">
-          <img src="../../assets/LOGO H.png" alt="daricare logo" class="brand-logo-img" />
+          <img :src="logoUrl" alt="daricare logo" class="brand-logo-img" />
         </div>
-        <h1>Construisons ensemble <br/>le futur du soin.</h1>
-        <p>Créez votre compte professionnel et rejoignez une communauté engagée pour une santé plus humaine.</p>
+        <h1>{{ t.signup_title }}</h1>
+        <p>{{ t.signup_subtitle }}</p>
         
         <div class="features-list">
           <div class="feature-item">
             <span class="feature-icon">✨</span>
-            <p>Gestion simplifiée des tournées</p>
+            <p>{{ t.footer_svc4 }}</p>
           </div>
           <div class="feature-item">
             <span class="feature-icon">🤝</span>
-            <p>Collaboration entre confrères</p>
+            <p>{{ t.footer_svc3 }}</p>
           </div>
           <div class="feature-item">
             <span class="feature-icon">📱</span>
-            <p>Interface intuitive et mobile</p>
+            <p>{{ t.footer_svc1 }}</p>
           </div>
         </div>
       </div>
@@ -96,8 +99,8 @@ const handleSignup = async () => {
     <div class="signup-form-side">
       <div class="signup-card">
         <div class="signup-header">
-          <h1>Créer un compte</h1>
-          <p>Commencez avec votre compte professionnel dès aujourd'hui.</p>
+          <h1>{{ t.signup_welcome }}</h1>
+          <p>{{ t.signup_fields_subtitle }}</p>
         </div>
 
         <div v-if="errorMessage" class="error-banner">
@@ -107,7 +110,7 @@ const handleSignup = async () => {
         <form @submit.prevent="handleSignup" class="signup-form">
           <!-- Name Input -->
           <div class="input-group">
-            <label for="name">Nom complet</label>
+            <label for="name">{{ t.signup_name_label }}</label>
             <div class="input-wrapper">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -126,7 +129,7 @@ const handleSignup = async () => {
 
           <!-- Email Input -->
           <div class="input-group">
-            <label for="email">Email</label>
+            <label for="email">{{ t.login_email_label }}</label>
             <div class="input-wrapper">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -145,7 +148,7 @@ const handleSignup = async () => {
 
           <!-- Password Input -->
           <div class="input-group">
-            <label for="password">Mot de passe</label>
+            <label for="password">{{ t.login_password_label }}</label>
             <div class="input-wrapper">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -179,7 +182,7 @@ const handleSignup = async () => {
 
           <!-- Confirm Password Input -->
           <div class="input-group">
-            <label for="confirmPassword">Confirmer mot de passe</label>
+            <label for="confirmPassword">{{ t.login_password_label }} ({{ t.nav_lang_label }})</label>
             <div class="input-wrapper">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -200,17 +203,17 @@ const handleSignup = async () => {
             <label class="checkbox-container">
               <input type="checkbox" v-model="rememberMe" :disabled="isLoading">
               <span class="checkmark"></span>
-              Se souvenir de moi
+              {{ t.login_remember_me }}
             </label>
           </div>
 
           <button type="submit" class="signup-button" :disabled="isLoading">
-            {{ isLoading ? 'Création du compte...' : 'S\'inscrire' }}
+            {{ isLoading ? t.signup_loading : t.signup_btn }}
           </button>
         </form>
 
         <div class="signup-footer">
-          <p>Vous avez déjà un compte ? <a href="#" @click.prevent="emit('navigate', 'login')">Se connecter</a></p>
+          <p>{{ t.signup_has_account }} <a href="#" @click.prevent="emit('navigate', 'login')">{{ t.login_btn }}</a></p>
         </div>
       </div>
     </div>

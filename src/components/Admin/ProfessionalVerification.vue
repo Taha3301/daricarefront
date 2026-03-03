@@ -500,7 +500,6 @@ const isImage = (path: string) => {
               <label>Expertise Professionnelle</label>
               <p><strong>Spécialité:</strong> {{ selectedPro.speciality }}</p>
               <p><strong>Expérience:</strong> {{ selectedPro.yearsOfExperience }} ans</p>
-              <p><strong>Numéro ADELI/RPPS:</strong> {{ selectedPro.adeliRppsNumber || 'N/A' }}</p>
             </div>
             <div class="info-group full-width">
               <label>Localisation</label>

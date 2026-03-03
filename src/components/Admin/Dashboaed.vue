@@ -11,6 +11,7 @@ import SidebarAdmin from './SidebarAdmin.vue';
 import Configuration from './Configuration.vue';
 import AdminPatients from './AdminPatients.vue';
 import DetailedRequests from './DetailedRequests.vue';
+import AdminManagement from './AdminManagement.vue';
 import logo from '../../assets/LOGO H.png';
 
 interface DashboardStats {
@@ -35,6 +36,7 @@ interface DashboardStats {
 const emit = defineEmits(['navigate']);
 
 const activeTab = ref('overview');
+const isSuperAdmin = ref(false); // refreshed on mount
 const professionals = ref<any[]>([]);
 const filteredProfessionals = computed(() => {
   return professionals.value.filter(p => p.status !== 'PENDING');
@@ -112,6 +114,9 @@ const fetchProfessionals = async () => {
 };
 
 onMounted(() => {
+  // Always re-read superadmin from storage so a new login refreshes the state
+  isSuperAdmin.value = storage.getItem('superadmin') === 'true';
+
   if (activeTab.value === 'verification-professional') {
     fetchProfessionals();
   } else if (activeTab.value === 'overview') {
@@ -173,6 +178,7 @@ const getStatusClass = (status: string) => {
     <SidebarAdmin 
       :activeTab="activeTab" 
       :isOpen="isSidebarOpen"
+      :superadmin="isSuperAdmin"
       @navigate="(tab) => { activeTab = tab; isSidebarOpen = false; }"
       @logout="handleLogout"
       @close="isSidebarOpen = false"
@@ -341,6 +347,7 @@ const getStatusClass = (status: string) => {
         <BookingManagement v-if="activeTab === 'requests'" />
         <DetailedRequests v-if="activeTab === 'detailed-requests'" />
         <Configuration v-if="activeTab === 'settings'" />
+        <AdminManagement v-if="activeTab === 'admin-management'" :superadmin="isSuperAdmin" />
 
         <!-- Professional View Modal (ReadOnly for regular list) -->
         <div v-if="selectedPro && activeTab === 'professionals'" class="modal-overlay" @click.self="selectedPro = null">

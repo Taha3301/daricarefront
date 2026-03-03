@@ -295,6 +295,29 @@ onMounted(fetchAllServices);
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  max-height: 500px;
+  overflow-y: auto;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+}
+
+/* Custom Scrollbar */
+.soins-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.soins-container::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 10px 0;
+}
+
+.soins-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.soins-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .soin-block {

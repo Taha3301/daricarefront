@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { getApiUrl } from '../config/api';
 import { storage } from '../utils/storage';
+import logoUrl from '../assets/LOGO H.png';
 const localStorage = storage;
 
 const emit = defineEmits(['navigate']);
@@ -56,14 +57,11 @@ const openUrl = (url: string) => {
 const formData = ref({
   specialty: '',
   experience: '',
-  licenseNumber: '',
   address: '',
   city: '',
-  phone: '', // This will be professional phone
   personalPhone: '',
   cin: '',
   diplomaName: '',
-  licenseName: '',
   latitude: 0,
   longitude: 0
 });
@@ -119,20 +117,19 @@ const fetchUserProfile = async () => {
       const data = await response.json();
       console.log('Profile data fetched:', data);
       
-      if (data.id) {
-        localStorage.setItem('user_id', data.id.toString());
+      const actualId = data.id || (data.user && data.user.id);
+      if (actualId) {
+        console.log('Updating user_id in storage:', actualId);
+        localStorage.setItem('user_id', actualId.toString());
       }
 
       formData.value.specialty = data.speciality || '';
       formData.value.experience = data.yearsOfExperience?.toString() || '';
-      formData.value.licenseNumber = data.adeliRppsNumber || '';
       formData.value.address = data.professionalAddress || '';
       formData.value.city = data.city || '';
-      formData.value.phone = data.professionalPhone || '';
       formData.value.personalPhone = data.phone || '';
       formData.value.cin = data.cin || '';
       formData.value.diplomaName = data.diploma || '';
-      formData.value.licenseName = data.license || '';
       formData.value.latitude = data.latitude || 0;
       formData.value.longitude = data.longitude || 0;
     }
@@ -214,21 +211,40 @@ const checkStepProgress = () => {
 };
 
 onMounted(async () => {
-  const userId = localStorage.getItem('user_id');
-  if (userId) {
+  // Always fetch services for the dropdown, regardless of userId
+  fetchServices();
+
+  const token = localStorage.getItem('access_token');
+  let userId = localStorage.getItem('user_id');
+  
+  // If we have a token but no user_id, try to fetch the profile to get the ID
+  if (token) {
     isLoading.value = true;
     try {
-      // Fetch everything, then decide the step
-      await Promise.all([
-        fetchServices(),
-        fetchUserProfile(),
-        fetchAlerts(userId),
-        fetchUserDocuments(userId)
-      ]);
-      checkStepProgress();
+      // First, ensure we have the profile (and thus the user_id)
+      await fetchUserProfile();
+      
+      // Re-read userId as it might have been set by fetchUserProfile
+      userId = localStorage.getItem('user_id');
+      
+      if (userId && userId !== 'undefined') {
+        // Now fetch specific data
+        await Promise.all([
+          fetchAlerts(userId),
+          fetchUserDocuments(userId)
+        ]);
+        checkStepProgress();
+      } else {
+        console.warn('Could not identify user even after profile fetch');
+        errorMessage.value = "Impossible d'identifier votre profil. Veuillez vous reconnecter.";
+      }
+    } catch (err) {
+      console.error('Error during initial data fetch:', err);
     } finally {
       isLoading.value = false;
     }
+  } else {
+    errorMessage.value = "Session expirée. Veuillez vous reconnecter.";
   }
 });
 
@@ -332,10 +348,7 @@ const submitProfile = async () => {
       speciality: formData.value.specialty,
       cin: formData.value.cin,
       diploma: formData.value.diplomaName,
-      license: formData.value.licenseName,
       yearsOfExperience: Number(formData.value.experience) || 0,
-      adeliRppsNumber: formData.value.licenseNumber,
-      professionalPhone: formData.value.phone,
       professionalAddress: formData.value.address,
       city: formData.value.city,
       latitude: Number(formData.value.latitude) || 0,
@@ -368,12 +381,15 @@ const submitProfile = async () => {
 
 const consolidatedSubmit = async () => {
   isLoading.value = true;
-  const profileSuccess = await submitProfile();
-  if (!profileSuccess) {
+  try {
+    const profileSuccess = await submitProfile();
+    if (!profileSuccess) {
+      return;
+    }
+    await submitDocuments();
+  } finally {
     isLoading.value = false;
-    return;
   }
-  await submitDocuments();
 };
 
 const submitDocuments = async () => {
@@ -439,7 +455,7 @@ const submitDocuments = async () => {
         <!-- Header -->
         <div class="header">
           <div class="brand">
-            <img src="../assets/LOGO H.png" alt="daricare logo" class="brand-logo-img" />
+            <img :src="logoUrl" alt="daricare logo" class="brand-logo-img" />
           </div>
           <h1>Vérification du compte</h1>
           <p>Complétez votre profil pour commencer à exercer sur la plateforme.</p>
@@ -478,14 +494,6 @@ const submitDocuments = async () => {
                 <label>Années d'expérience</label>
                 <input v-model="formData.experience" type="number" placeholder="Ex: 5" />
               </div>
-              <div class="input-group">
-                <label>Numéro ADELI / RPPS</label>
-                <input v-model="formData.licenseNumber" type="text" placeholder="123456789" />
-              </div>
-              <div class="input-group">
-                <label>Téléphone professionnel</label>
-                <input v-model="formData.phone" type="tel" placeholder="06 00 00 00 00" />
-              </div>
               <div class="input-group full-width">
                 <label>Adresse professionnelle</label>
                 <input v-model="formData.address" type="text" placeholder="12 rue de la Paix" />
@@ -505,10 +513,6 @@ const submitDocuments = async () => {
               <div class="input-group">
                 <label>Intitulé du Diplôme</label>
                 <input v-model="formData.diplomaName" type="text" placeholder="Ex: Diplôme d'État d'Infirmier" />
-              </div>
-              <div class="input-group">
-                <label>Référence Licence</label>
-                <input v-model="formData.licenseName" type="text" placeholder="Ex: LIC-123456" />
               </div>
               <div class="input-group full-width">
                 <div class="location-status" v-if="formData.latitude">

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { getApiUrl } from '../config/api';
+import { getApiUrl, getUploadUrl } from '../config/api';
 
 type Service = {
   id: number;
   name: string;
   description?: string | null;
+  image?: string | null;
 };
 
 const emit = defineEmits<{
@@ -25,7 +26,7 @@ const fetchServices = async () => {
     const headers: Record<string, string> = { accept: '*/*' };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    const response = await fetch(getApiUrl('/services'), { headers });
+    const response = await fetch(getApiUrl('/services/only'), { headers });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch services (${response.status})`);
@@ -44,226 +45,427 @@ const selectService = (serviceId: number) => {
   emit('navigate', 'service-soins', serviceId);
 };
 
+// Get icon based on service name
+const getServiceIcon = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes('infirm')) return '🩺';
+  if (n.includes('kiné')) return '💪';
+  if (n.includes('sage') || n.includes('matern')) return '👶';
+  if (n.includes('diabèt') || n.includes('diabet')) return '💉';
+  if (n.includes('plaie') || n.includes('cicatris')) return '🩹';
+  if (n.includes('post') || n.includes('opérat')) return '🏥';
+  if (n.includes('chronique') || n.includes('surveill')) return '📋';
+  if (n.includes('technique') || n.includes('spécialis')) return '⚕️';
+  return '🏥';
+};
+
 onMounted(fetchServices);
 </script>
 
 <template>
-  <div class="service-selection-page">
-    <div class="container">
-      <div class="header">
-        <h1 class="title">De quel professionnel avez-vous besoin ?</h1>
-        <p class="subtitle">Sélectionnez le type de service pour votre demande de soins à domicile.</p>
+  <div class="selection-page">
+    <!-- Background -->
+    <div class="page-bg">
+      <div class="page-overlay"></div>
+    </div>
+
+    <!-- Logo top left -->
+    <div class="page-logo">
+      <img src="../assets/logowhite.png" alt="DariCare" />
+    </div>
+
+    <!-- Back button top right -->
+    <button class="btn-back-top" @click="emit('navigate', 'landing')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Retour à l'accueil
+    </button>
+
+    <!-- Main content -->
+    <div class="page-content">
+      <div class="page-header">
+        <p class="page-tag">Soins à domicile</p>
+        <h1 class="page-title">De quel professionnel<br/>avez-vous besoin ?</h1>
+        <p class="page-subtitle">Sélectionnez le type de service pour votre demande de soins à domicile.</p>
       </div>
 
-      <div v-if="isLoading" class="state-container">
-        <div class="loader"></div>
+      <!-- Loading -->
+      <div v-if="isLoading" class="state-wrap">
+        <div class="spinner"></div>
         <p>Chargement des services...</p>
       </div>
-      
-      <div v-else-if="errorMsg" class="state-container error">
+
+      <!-- Error -->
+      <div v-else-if="errorMsg" class="state-wrap error">
         <p>{{ errorMsg }}</p>
         <button class="btn-retry" @click="fetchServices">Réessayer</button>
       </div>
 
-      <div v-else class="services-grid">
-        <div 
-          v-for="service in services" 
-          :key="service.id" 
-          class="service-card"
+      <!-- Services grid -->
+      <div v-else class="services-list">
+        <button
+          v-for="(service, index) in services"
+          :key="service.id"
+          class="service-item"
+          :style="{
+            animationDelay: `${index * 80}ms`,
+            backgroundImage: service.image
+              ? `url('${getUploadUrl(service.image)}')`
+              : 'none'
+          }"
           @click="selectService(service.id)"
         >
-          <div class="service-icon">
-            <template v-if="service.name.toLowerCase().includes('infirm')">🩺</template>
-            <template v-else-if="service.name.toLowerCase().includes('kiné')">💪</template>
-            <template v-else-if="service.name.toLowerCase().includes('sage')">👶</template>
-            <template v-else>🏥</template>
-          </div>
-          <div class="service-info">
-            <h2 class="service-name">{{ service.name }}</h2>
-            <p class="service-desc">{{ service.description || 'Soins professionnels à domicile' }}</p>
-          </div>
-          <div class="service-arrow">→</div>
-        </div>
-      </div>
+          <!-- Overlay -->
+          <div class="card-overlay"></div>
 
-      <div class="footer">
-        <button class="btn-back" @click="emit('navigate', 'landing')">← Retour à l'accueil</button>
+          <!-- Emoji fallback (shown only when no image) -->
+          <div v-if="!service.image" class="item-emoji-bg">{{ getServiceIcon(service.name) }}</div>
+
+          <!-- Info -->
+          <div class="item-info">
+            <span class="item-name">{{ service.name }}</span>
+            <span class="item-desc">{{ service.description || 'Soins professionnels à domicile.' }}</span>
+          </div>
+
+          <!-- Arrow -->
+          <div class="item-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+            Choisir
+          </div>
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.service-selection-page {
-  width: 100%;
-  min-height: 80vh;
-  padding: clamp(2rem, 8vw, 4rem) 1.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-}
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
-.container {
-  max-width: 900px;
-  width: 100%;
-}
-
-.header {
-  text-align: left;
-  margin-bottom: clamp(2rem, 6vw, 4rem);
-}
-
-.title {
-  font-size: clamp(1.8rem, 5vw, 2.5rem);
-  font-weight: 800;
-  color: #0f172a;
-  margin-bottom: 0.75rem;
-  letter-spacing: -0.025em;
-  line-height: 1.2;
-}
-
-.subtitle {
-  font-size: clamp(1rem, 2.5vw, 1.15rem);
-  color: #64748b;
-  font-weight: 500;
-  line-height: 1.5;
-}
-
-.services-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
-.service-card {
-  background: white;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 20px;
-  padding: clamp(1.25rem, 5vw, 2rem);
-  display: flex;
-  align-items: center;
-  gap: clamp(1rem, 4vw, 2rem);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* ── Page Shell ── */
+.selection-page {
+  font-family: 'Outfit', sans-serif;
   position: relative;
-  overflow: hidden;
-}
-
-.service-card:hover {
-  border-color: #2b69ad;
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(43, 105, 173, 0.1);
-  background: #f0f9ff;
-}
-
-.service-icon {
-  font-size: clamp(1.5rem, 5vw, 2.5rem);
-  width: clamp(50px, 15vw, 70px);
-  height: clamp(50px, 15vw, 70px);
-  background: #f8fafc;
+  height: auto;
+  min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
-  transition: all 0.3s;
-  flex-shrink: 0;
+  overflow-y: auto;
 }
 
-.service-card:hover .service-icon {
-  background: white;
-  transform: scale(1.1);
+/* ── Background ── */
+.page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image: url('../assets/bg1.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
-.service-info {
-  flex: 1;
+.page-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(5, 15, 35, 0.72) 0%,
+    rgba(10, 30, 60, 0.60) 50%,
+    rgba(5, 20, 45, 0.70) 100%
+  );
 }
 
-.service-name {
-  font-size: 1.4rem;
+/* ── Logo ── */
+.page-logo {
+  position: fixed;
+  top: 1.2rem;
+  left: 1.75rem;
+  z-index: 20;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.page-logo img {
+  height: 38px;
+  width: auto;
+}
+
+/* ── Back button ── */
+.btn-back-top {
+  position: fixed;
+  top: 1.2rem;
+  right: 1.75rem;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 99px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.btn-back-top:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateX(-3px);
+}
+
+/* ── Main Content ── */
+.page-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1100px;
+  padding: 5rem 2rem 3rem;
+  animation: fadeInUp 0.7s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Header ── */
+.page-header {
+  margin-bottom: 0;
+}
+
+.page-tag {
+  display: inline-block;
+  background: rgba(59, 130, 246, 0.25);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.85rem;
+  border-radius: 99px;
+  margin-bottom: 0.6rem;
+}
+
+.page-title {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
   font-weight: 800;
-  color: #0f172a;
-  margin-bottom: 0.35rem;
+  color: #ffffff;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.4rem;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.3);
 }
 
-.service-desc {
-  color: #64748b;
+.page-subtitle {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
   line-height: 1.4;
+  margin: 0;
 }
 
-.service-arrow {
-  font-size: 1.5rem;
-  color: #cbd5e1;
+/* ── Services Grid ── */
+.services-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.service-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  padding: 2rem 1.75rem;
+  min-height: 120px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: 'Outfit', sans-serif;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  animation: fadeInUp 0.5s ease-out backwards;
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: rgba(15, 30, 60, 0.7);
+}
+
+/* Dark gradient overlay on top of the bg image */
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(5, 15, 40, 0.45) 0%,
+    rgba(5, 15, 40, 0.25) 60%,
+    rgba(5, 15, 40, 0.10) 100%
+  );
+  transition: background 0.35s ease;
+  z-index: 0;
+}
+
+.service-item:hover .card-overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(30, 60, 120, 0.75) 0%,
+    rgba(20, 50, 110, 0.55) 60%,
+    rgba(10, 30, 80, 0.35) 100%
+  );
+}
+
+/* Emoji fallback background */
+.item-emoji-bg {
+  font-size: 2rem;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 44px;
+  text-align: center;
+}
+
+.service-item:hover {
+  border-color: rgba(59, 130, 246, 0.6);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(59, 130, 246, 0.25);
+}
+
+/* ── Item Info ── */
+.item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.item-name {
+  font-size: 0.95rem;
   font-weight: 700;
+  color: #ffffff;
+  line-height: 1.3;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+}
+
+.item-desc {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 400;
+  line-height: 1.35;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+/* ── Arrow / CTA ── */
+.item-arrow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.78rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-left: auto;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.service-item:hover .item-arrow {
+  color: #60a5fa;
+  gap: 0.5rem;
+}
+
+/* ── States ── */
+.state-wrap {
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+.btn-retry {
+  margin-top: 1rem;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  padding: 0.5rem 1.25rem;
+  border-radius: 99px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
   transition: all 0.3s;
 }
 
-.service-card:hover .service-arrow {
-  color: #2b69ad;
-  transform: translateX(5px);
+.btn-retry:hover {
+  background: rgba(255,255,255,0.25);
 }
 
-.state-container {
-  text-align: center;
-  padding: 4rem;
-  color: #64748b;
-  font-weight: 600;
+/* ── Animations ── */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.loader {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f1f5f9;
-  border-top-color: #2b69ad;
-  border-radius: 50%;
-  animation: spinner 0.8s linear infinite;
-  margin: 0 auto 1.5rem;
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes spinner {
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-.btn-back {
-  background: transparent;
-  border: none;
-  color: #64748b;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-top: 3rem;
-}
-
-.btn-back:hover {
-  color: #2b69ad;
-}
-
+/* ── Responsive ── */
 @media (max-width: 640px) {
-  .header {
-    padding-right: 2rem;
+  .page-content {
+    padding: 0 1.25rem;
   }
 
-  .service-name {
-    font-size: 1.2rem;
+  .page-title {
+    font-size: 1.5rem;
   }
-  
-  .service-desc {
-    font-size: 0.9rem;
+
+  .service-item {
+    padding: 0.65rem 1rem;
+    gap: 0.85rem;
   }
-  
-  .service-arrow {
+
+  .item-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .item-name {
+    font-size: 0.88rem;
+  }
+
+  .item-desc {
     display: none;
-  }
-  
-  .services-grid {
-    padding-right: 2rem; /* Make them smaller from the right side */
-  }
-
-  .btn-back {
-    margin-top: 2rem;
-    width: 100%;
-    text-align: left;
-    padding: 1rem 0;
   }
 }
 </style>

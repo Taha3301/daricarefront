@@ -17,8 +17,18 @@ const soins = ref<any[]>([]);
 
 const serviceForm = ref({
   name: '',
-  description: ''
+  description: '',
+  image: null as File | null
 });
+
+const window = globalThis.window;
+
+const handleFileChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files[0]) {
+    serviceForm.value.image = target.files[0];
+  }
+};
 
 const soinForm = ref({
   name: '',
@@ -82,18 +92,21 @@ const handleSaveService = async () => {
     ? getApiUrl(`/services/${editingService.value.id}`)
     : getApiUrl('/services');
 
+  const formData = new FormData();
+  formData.append('name', serviceForm.value.name);
+  formData.append('description', serviceForm.value.description);
+  if (serviceForm.value.image) {
+    formData.append('image', serviceForm.value.image);
+  }
+
   try {
     const response = await fetch(url, {
       method,
       headers: {
         'accept': '*/*',
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({
-        name: serviceForm.value.name,
-        description: serviceForm.value.description
-      })
+      body: formData
     });
 
     if (response.ok) {
@@ -124,9 +137,13 @@ const handleDeleteService = async (id: number) => {
     if (response.ok) {
       fetchServices();
       if (selectedService.value?.id === id) selectedService.value = null;
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      alert('Erreur: ' + (errorData.message || 'Échec de la suppression. Ce service contient peut-être encore des soins.'));
     }
   } catch (err) {
     console.error('Failed to delete service:', err);
+    alert('Une erreur réseau est survenue.');
   }
 };
 
@@ -184,9 +201,13 @@ const handleDeleteSoin = async (id: number) => {
     if (response.ok) {
       fetchSoins(selectedService.value.id);
       if (selectedSoin.value?.id === id) selectedSoin.value = null;
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      alert('Erreur: ' + (errorData.message || 'Échec de la suppression du soin.'));
     }
   } catch (err) {
     console.error('Failed to delete soin:', err);
+    alert('Une erreur réseau est survenue.');
   }
 };
 
@@ -227,7 +248,7 @@ const handleSaveContent = async () => {
   }
 
   try {
-    const response = await fetch(getApiUrl(url), {
+    const response = await fetch(url, {
       method,
       headers: {
         'accept': '*/*',
@@ -263,9 +284,13 @@ const handleDeleteContent = async (item: any, type: string) => {
     });
     if (response.ok) {
       fetchSoins(selectedService.value.id);
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      alert('Erreur: ' + (errorData.message || 'Échec de la suppression du champ.'));
     }
   } catch (err) {
     console.error('Failed to delete content:', err);
+    alert('Une erreur réseau est survenue.');
   }
 };
 
@@ -283,7 +308,11 @@ const removeChoice = (index: number) => {
 const openServiceModal = (service: any = null) => {
   if (service) {
     editingService.value = service;
-    serviceForm.value = { name: service.name, description: service.description };
+    serviceForm.value = { 
+      name: service.name, 
+      description: service.description,
+      image: null
+    };
   } else {
     resetServiceForm();
   }
@@ -324,7 +353,7 @@ const openContentModal = (item: any = null, type: any = 'text') => {
 
 const resetServiceForm = () => {
   editingService.value = null;
-  serviceForm.value = { name: '', description: '' };
+  serviceForm.value = { name: '', description: '', image: null };
 };
 
 const resetSoinForm = () => {
@@ -380,6 +409,9 @@ onMounted(fetchServices);
             :class="['service-item', { active: selectedService?.id === service.id }]"
             @click="selectService(service)"
           >
+            <div class="service-image" v-if="service.image">
+              <img :src="getApiUrl(service.image)" :alt="service.name" />
+            </div>
             <div class="service-info">
               <span class="service-name">{{ service.name }}</span>
               <p class="service-desc">{{ service.description }}</p>
@@ -525,6 +557,14 @@ onMounted(fetchServices);
           <div class="form-group">
             <label>Nom du service</label>
             <input v-model="serviceForm.name" type="text" placeholder="Ex: Soins Infirmiers" required />
+          </div>
+          <div class="form-group">
+            <label>Image du service</label>
+            <input type="file" @change="handleFileChange" accept="image/*" class="file-input" />
+            <div v-if="serviceForm.image || (editingService && editingService.image)" class="image-preview">
+              <img v-if="serviceForm.image" :src="window?.URL?.createObjectURL(serviceForm.image)" />
+              <img v-else :src="getApiUrl(editingService.image)" />
+            </div>
           </div>
           <div class="form-group">
             <label>Description</label>
@@ -777,6 +817,43 @@ onMounted(fetchServices);
 .item-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+.service-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+}
+
+.service-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-input {
+  padding: 0.5rem;
+  border: 1px dashed #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.image-preview {
+  margin-top: 0.5rem;
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .icon-btn {

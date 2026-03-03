@@ -8,6 +8,7 @@ import { getApiUrl, SOCKET_URL } from '../../config/api';
 import SidebarProf from './SidebarProf.vue';
 import AgendaComponent from './AgendaComponent.vue';
 import AnalyticsDashboard from './AnalyticsDashboard.vue';
+import SettingsProf from './SettingsProf.vue';
 
 interface MedicalRequest {
   id: number;
@@ -68,9 +69,6 @@ const isProfileModalOpen = ref(false);
 const isPreviewModalOpen = ref(false);
 const previewImageUrl = ref('');
 const allDemandsFilter = ref('all'); // 'all', 'accepted', 'denied', 'pending'
-
-
-
 
 const allDemands = computed(() => {
   const combined = [
@@ -336,9 +334,12 @@ const subscribeToPushNotifications = async () => {
     let subscription = await registration.pushManager.getSubscription();
     
     if (!subscription) {
-      // ⚠️ IMPORTANT: YOU MUST REPLACE THIS WITH YOUR REAL VAPID PUBLIC KEY FROM BACKEND
-      // Without a real key, background notifications will NOT work.
       const VAPID_PUBLIC_KEY = 'REPLACE_WITH_YOUR_BACKEND_VAPID_PUBLIC_KEY'; 
+      
+      if (VAPID_PUBLIC_KEY.includes('REPLACE_WITH_YOUR') || !VAPID_PUBLIC_KEY) {
+        console.info('Push notifications: Skipping registration (VAPID key is incomplete or a placeholder).');
+        return;
+      }
       
       console.log('Registering device for background notifications...');
       try {
@@ -346,8 +347,13 @@ const subscribeToPushNotifications = async () => {
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
         });
-      } catch (subErr) {
-        console.error('Push registration failed. Check your VAPID key.', subErr);
+      } catch (subErr: any) {
+        // Only log if it's not the invalid key error we expect from placeholders
+        if (subErr.toString().includes('applicationServerKey')) {
+          console.warn('Push registration skipped: VAPID key is invalid (probably a placeholder).');
+        } else {
+          console.error('Push registration failed:', subErr);
+        }
         return;
       }
     }
@@ -800,6 +806,7 @@ const showRequestDetails = async (req: any) => {
   }
 };
 
+
 const openPreview = (url: string) => {
   previewImageUrl.value = url;
   isPreviewModalOpen.value = true;
@@ -908,29 +915,33 @@ const formatDate = (dateStr: string) => {
           <h1 v-else-if="activeSubView === 'accepted'">Demandes Acceptées</h1>
           <h1 v-else-if="activeSubView === 'completed'">Demandes Complétées</h1>
           <h1 v-else-if="activeSubView === 'calendar'">Agenda Professionnel</h1>
+          <h1 v-else-if="activeSubView === 'settings'">Paramètres</h1>
           <h1 v-else>{{ activeSubView.charAt(0).toUpperCase() + activeSubView.slice(1) }}</h1>
           <p>
-            Notifications en temps réel des patients dans votre zone.
-            <span v-if="activeSubView === 'requests'">Nouveaux soins disponibles pour votre spécialité.</span>
-            <span v-if="activeSubView === 'all_history'">Visualisez l'état de toutes les sollicitations (Acceptés, Refusés, Attente).</span>
-            <span v-if="activeSubView === 'accepted'">Retrouvez ici vos demandes acceptées en attente d'intervention.</span>
-            <span v-if="activeSubView === 'completed'">Visualisez ici toutes les demandes que vous avez terminées.</span>
-            <span v-if="activeSubView === 'calendar'">Gérez vos rendez-vous et visualisez votre planning mensuel.</span>
+            <span v-if="activeSubView === 'requests'">Demandes en attente et notifications en temps réel.</span>
+            <span v-else-if="activeSubView === 'all_history'">Visualisez l'état de toutes les sollicitations (Acceptés, Refusés, Attente).</span>
+            <span v-else-if="activeSubView === 'accepted'">Retrouvez ici vos demandes acceptées en attente d'intervention.</span>
+            <span v-else-if="activeSubView === 'completed'">Visualisez ici toutes les demandes que vous avez terminées.</span>
+            <span v-else-if="activeSubView === 'calendar'">Gérez vos rendez-vous et visualisez votre planning mensuel.</span>
+            <span v-else-if="activeSubView === 'settings'">Gérez les options de sécurité et les préférences de votre compte.</span>
+            <span v-else>Notifications en temps réel des patients dans votre zone.</span>
             <span v-if="!isConnected" class="offline-warning">⚠️ Déconnecté</span>
           </p>
         </div>
         <div class="header-actions">
           <button class="btn-test-notif" @click="triggerTestNotification" title="Tester les notifications">
-            Test
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/><path d="M12 4v10"/></svg>
+            <span class="btn-text">Test</span>
           </button>
           <button class="btn-refresh" @click="fetchInitialData" :disabled="isLoading">
-            {{ isLoading ? 'Chargement...' : 'Actualiser le flux' }}
+            <svg :class="{ 'spin': isLoading }" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M3 21v-5h5"></path></svg>
+            <span class="btn-text">{{ isLoading ? 'Chargement...' : 'Actualiser' }}</span>
           </button>
         </div>
       </header>
 
       <!-- Filter Section -->
-      <section class="filter-section">
+      <section v-if="activeSubView !== 'settings'" class="filter-section">
         <div class="filter-bar">
           <div v-if="activeSubView !== 'all_history'" class="search-input">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1383,9 +1394,13 @@ const formatDate = (dateStr: string) => {
         </div>
       </template>
 
-      <!-- Analytics View -->
       <template v-else-if="activeSubView === 'analytics'">
         <AnalyticsDashboard />
+      </template>
+
+      <!-- Settings View -->
+      <template v-else-if="activeSubView === 'settings'">
+        <SettingsProf />
       </template>
 
       <!-- Fallback for other sections -->
@@ -2056,6 +2071,7 @@ const formatDate = (dateStr: string) => {
   to { transform: rotate(360deg); }
 }
 
+
 .empty-state {
   text-align: center;
   padding: 5rem 2rem;
@@ -2381,8 +2397,28 @@ const formatDate = (dateStr: string) => {
 
   .header-actions {
     width: 100%;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
+  }
+  
+  .btn-refresh, .btn-test-notif {
+    padding: 0.8rem;
+    font-size: 0.8rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn-text {
+    display: none;
+  }
+
+  .header-actions button svg {
+    width: 22px;
+    height: 22px;
   }
 
   .header-actions button {
@@ -3644,4 +3680,10 @@ const formatDate = (dateStr: string) => {
 
 
 
+.mini-modal {
+  max-width: 450px !important;
+}
+.border-none {
+  border: none !important;
+}
 </style>
