@@ -1,19 +1,9 @@
-/**
- * API Configuration
- * Handles environment-specific API base URLs
- */
+// API Configuration
+// Handles environment-specific API base URLs
 
-// Determine if we're in production (GitHub Pages) or development
-const isProduction = import.meta.env.PROD
-
-// API Base URL - use proxy in development, direct backend URL in production
-export const API_BASE_URL = isProduction
-    ? 'https://daricareback.onrender.com'
-    : 'http://localhost:3000'
-
-export const SOCKET_URL = isProduction
-    ? 'https://daricareback.onrender.com'
-    : 'http://localhost:3000'
+// API Base URL - always use production backend URL
+export const API_BASE_URL = 'https://daricareback.onrender.com'
+export const SOCKET_URL = 'https://daricareback.onrender.com'
 
 /**
  * Helper function to construct full API URLs

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, onUnmounted, computed } from 'vue';
-import { getApiUrl, getUploadUrl } from '../config/api';
+import { getApiUrl } from '../config/api';
 import Footer from './Footer.vue';
 import { useLanguage } from '../composables/useLanguage';
 
@@ -172,15 +172,10 @@ onUnmounted(() => {
               v-for="(service, index) in services.slice(0, 4)" 
               :key="service.id" 
               class="service-card glass compact-card"
-              :style="{ 
-                animationDelay: `${index * 100}ms`,
-                backgroundImage: service.image ? `url(${getUploadUrl(service.image)})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }"
+              :style="{ animationDelay: `${index * 100}ms` }"
               @click="emit('navigate', 'service-soins', service.id)"
             >
-              <div class="card-overlay-btn"></div>
+              <!-- No overlay needed without images -->
               <div class="card-content">
                 <h3>{{ service.name }}</h3>
                 <div class="card-icon">
@@ -467,8 +462,10 @@ onUnmounted(() => {
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
   animation: fadeInUp 0.8s ease-out backwards;
-  height: 120px;
+  height: 80px;
   display: flex;
+  background: white;
+  border: 1.5px solid #e2e8f0;
 }
 
 .service-card:hover {
@@ -478,10 +475,7 @@ onUnmounted(() => {
 }
 
 .card-overlay-btn {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.2) 100%);
-  z-index: 1;
+  display: none;
 }
 
 .card-content {
@@ -497,24 +491,22 @@ onUnmounted(() => {
 }
 
 .card-content h3 {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #1e293b;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 .card-icon {
-  color: #ffffff;
+  color: #3b82f6;
   display: flex;
   transition: transform 0.3s ease, color 0.3s ease;
-  background: rgba(255, 255, 255, 0.2);
+  background: #eff6ff;
   padding: 8px;
   border-radius: 50%;
-  backdrop-filter: blur(4px);
 }
 
 .service-card:hover .card-icon {
