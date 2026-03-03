@@ -255,18 +255,72 @@ onMounted(fetchAdmins);
         <p>Chargement...</p>
       </div>
 
-      <table v-else-if="admins.length > 0" class="am-table">
-        <thead>
-          <tr>
-            <th>Administrateur</th>
-            <th>Rôle</th>
-            <th>Statut</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="admin in admins" :key="admin.id" class="am-row">
-            <td>
+      <div v-else-if="admins.length > 0" class="am-list-container">
+        <table class="am-table">
+          <thead>
+            <tr>
+              <th>Administrateur</th>
+              <th>Rôle</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="admin in admins" :key="admin.id" class="am-row">
+              <td>
+                <div class="user-cell">
+                  <div class="avatar">{{ admin.name?.[0]?.toUpperCase() || admin.email?.[0]?.toUpperCase() || 'A' }}</div>
+                  <div class="user-details">
+                    <span class="user-name">{{ admin.name || '—' }}</span>
+                    <span class="user-email">{{ admin.email }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span :class="['role-badge', admin.superadmin ? 'super' : 'regular']">
+                  {{ admin.superadmin ? 'Super Admin' : 'Administrateur' }}
+                </span>
+              </td>
+              <td>
+                <span :class="['status-chip', admin.ban ? 'banned' : 'active']">
+                  {{ admin.ban ? 'Banni' : 'Actif' }}
+                </span>
+              </td>
+              <td>
+                <div class="action-btns">
+                  <!-- Toggle Superadmin -->
+                  <button
+                    class="toggle-btn"
+                    :class="admin.superadmin ? 'toggle-active-super' : 'toggle-inactive'"
+                    :disabled="togglingId === admin.id"
+                    :title="admin.superadmin ? 'Révoquer Super Admin' : 'Promouvoir Super Admin'"
+                    @click="toggleSuperadmin(admin)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    {{ admin.superadmin ? 'Super Admin' : 'Admin' }}
+                  </button>
+  
+                  <!-- Toggle Ban -->
+                  <button
+                    class="toggle-btn"
+                    :class="admin.ban ? 'toggle-active-ban' : 'toggle-inactive'"
+                    :disabled="togglingId === admin.id"
+                    :title="admin.ban ? 'Débannir' : 'Bannir'"
+                    @click="toggleBan(admin)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    {{ admin.ban ? 'Banni' : 'Actif' }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <!-- Mobile Cards View -->
+        <div class="mobile-cards">
+          <div v-for="admin in admins" :key="admin.id" class="mobile-admin-card">
+            <div class="m-card-header">
               <div class="user-cell">
                 <div class="avatar">{{ admin.name?.[0]?.toUpperCase() || admin.email?.[0]?.toUpperCase() || 'A' }}</div>
                 <div class="user-details">
@@ -274,47 +328,45 @@ onMounted(fetchAdmins);
                   <span class="user-email">{{ admin.email }}</span>
                 </div>
               </div>
-            </td>
-            <td>
-              <span :class="['role-badge', admin.superadmin ? 'super' : 'regular']">
-                {{ admin.superadmin ? 'Super Admin' : 'Administrateur' }}
-              </span>
-            </td>
-            <td>
-              <span :class="['status-chip', admin.ban ? 'banned' : 'active']">
-                {{ admin.ban ? 'Banni' : 'Actif' }}
-              </span>
-            </td>
-            <td>
-              <div class="action-btns">
-                <!-- Toggle Superadmin -->
-                <button
-                  class="toggle-btn"
-                  :class="admin.superadmin ? 'toggle-active-super' : 'toggle-inactive'"
-                  :disabled="togglingId === admin.id"
-                  :title="admin.superadmin ? 'Révoquer Super Admin' : 'Promouvoir Super Admin'"
-                  @click="toggleSuperadmin(admin)"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="m-card-body">
+              <div class="m-info-row">
+                <span class="m-label">Rôle:</span>
+                <span :class="['role-badge', admin.superadmin ? 'super' : 'regular']">
                   {{ admin.superadmin ? 'Super Admin' : 'Admin' }}
-                </button>
-
-                <!-- Toggle Ban -->
-                <button
-                  class="toggle-btn"
-                  :class="admin.ban ? 'toggle-active-ban' : 'toggle-inactive'"
-                  :disabled="togglingId === admin.id"
-                  :title="admin.ban ? 'Débannir' : 'Bannir'"
-                  @click="toggleBan(admin)"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                  {{ admin.ban ? 'Banni' : 'Actif' }}
-                </button>
+                </span>
               </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <div class="m-info-row">
+                <span class="m-label">Statut:</span>
+                <span :class="['status-chip', admin.ban ? 'banned' : 'active']">
+                  {{ admin.ban ? 'Banni' : 'Actif' }}
+                </span>
+              </div>
+            </div>
+            <div class="m-card-actions">
+              <button
+                class="toggle-btn"
+                :class="admin.superadmin ? 'toggle-active-super' : 'toggle-inactive'"
+                :disabled="togglingId === admin.id"
+                @click="toggleSuperadmin(admin)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                {{ admin.superadmin ? 'Super Admin' : 'Admin' }}
+              </button>
+              <button
+                class="toggle-btn"
+                :class="admin.ban ? 'toggle-active-ban' : 'toggle-inactive'"
+                :disabled="togglingId === admin.id"
+                @click="toggleBan(admin)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                {{ admin.ban ? 'Banni' : 'Actif' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
 
       <div v-else class="empty-state">
         <div class="empty-icon">🛡️</div>
@@ -695,14 +747,61 @@ onMounted(fetchAdmins);
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Empty state */
-.empty-state {
+/* Responsive */
+.mobile-cards {
+  display: none;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .am-table { display: none; }
+  .mobile-cards { display: flex; }
+  .am-header { flex-direction: column; align-items: stretch; }
+  .add-btn { width: 100%; justify-content: center; }
+  .am-card { padding: 1.25rem; background: transparent; box-shadow: none; border: none; }
+}
+
+.mobile-admin-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.25rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 3rem;
-  color: #94a3b8;
-  gap: 0.5rem;
+  gap: 1rem;
 }
-.empty-icon { font-size: 2.5rem; }
+
+.m-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid #f8fafc;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.m-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.m-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.m-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.m-card-actions .toggle-btn {
+  justify-content: center;
+  padding: 0.625rem;
+}
 </style>

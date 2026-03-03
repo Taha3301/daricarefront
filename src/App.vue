@@ -11,6 +11,7 @@ import VerificationPage from './pages/VerificationPage.vue'
 import LandingPage from './components/landingpage.vue'
 import ProDashboard from './components/Professional/page1.vue'
 import AdminDashboard from './components/Admin/Dashboaed.vue'
+import AdminManagementPage from './components/Admin/AdminManagementPage.vue'
 import BookingForm from './components/HelpRequestForm.vue'
 import NurseBookingForm from './components/NurseBookingForm.vue'
 import ServiceSoinsPage from './components/ServiceSoinsPage.vue'
@@ -167,6 +168,10 @@ const handleNewRequest = (data: any) => {
       />
       <AdminDashboard
         v-else-if="currentView === 'admin-dashboard'"
+        @navigate="(view: string) => currentView = view"
+      />
+      <AdminManagementPage
+        v-else-if="currentView === 'admin-management'"
         @navigate="(view: string) => currentView = view"
       />
       <BookingForm 

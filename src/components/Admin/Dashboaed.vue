@@ -11,7 +11,6 @@ import SidebarAdmin from './SidebarAdmin.vue';
 import Configuration from './Configuration.vue';
 import AdminPatients from './AdminPatients.vue';
 import DetailedRequests from './DetailedRequests.vue';
-import AdminManagement from './AdminManagement.vue';
 import logo from '../../assets/LOGO H.png';
 
 interface DashboardStats {
@@ -179,7 +178,14 @@ const getStatusClass = (status: string) => {
       :activeTab="activeTab" 
       :isOpen="isSidebarOpen"
       :superadmin="isSuperAdmin"
-      @navigate="(tab) => { activeTab = tab; isSidebarOpen = false; }"
+      @navigate="(tab) => { 
+        if (tab === 'admin-management') {
+          emit('navigate', 'admin-management');
+        } else {
+          activeTab = tab; 
+        }
+        isSidebarOpen = false; 
+      }"
       @logout="handleLogout"
       @close="isSidebarOpen = false"
     />
@@ -347,7 +353,6 @@ const getStatusClass = (status: string) => {
         <BookingManagement v-if="activeTab === 'requests'" />
         <DetailedRequests v-if="activeTab === 'detailed-requests'" />
         <Configuration v-if="activeTab === 'settings'" />
-        <AdminManagement v-if="activeTab === 'admin-management'" :superadmin="isSuperAdmin" />
 
         <!-- Professional View Modal (ReadOnly for regular list) -->
         <div v-if="selectedPro && activeTab === 'professionals'" class="modal-overlay" @click.self="selectedPro = null">

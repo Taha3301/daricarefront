@@ -135,15 +135,16 @@ const handleLogout = () => {
   background: #ffffff;
   border-right: 1px solid #e2e8f0;
   display: flex; flex-direction: column;
-  padding: 1.5rem;
+  padding: 1.25rem;
   position: sticky; top: 0; height: 100vh;
   flex-shrink: 0;
   box-shadow: 4px 0 24px rgba(0,0,0,0.02);
   z-index: 100;
+  overflow-y: auto;
 }
 
 .sidebar-header { 
-  margin-bottom: 2.5rem; 
+  margin-bottom: 2rem; 
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -170,15 +171,15 @@ const handleLogout = () => {
   object-fit: contain;
 }
 
-.sidebar-nav { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
 
 .nav-item {
-  display: flex; align-items: center; gap: 0.625rem;
-  padding: 0.75rem 0.875rem; border: none; background: transparent;
-  color: #64748b; border-radius: 12px; cursor: pointer;
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.625rem 0.75rem; border: none; background: transparent;
+  color: #64748b; border-radius: 10px; cursor: pointer;
   font-weight: 600; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%; text-align: left;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
 }
 
 .nav-item:hover { background: #f8fafc; color: #0f172a; transform: translateX(4px); }
@@ -188,7 +189,7 @@ const handleLogout = () => {
 .superadmin-item.active { background: rgba(124, 58, 237, 0.06); color: #7c3aed; }
 .superadmin-item:hover { color: #7c3aed; }
 
-.sidebar-footer { margin-top: auto; padding-top: 1rem; padding-bottom: 2rem; border-top: 1px solid #f1f5f9; }
+.sidebar-footer { margin-top: 1.5rem; padding-top: 0.75rem; padding-bottom: 1rem; border-top: 1px solid #f1f5f9; }
 
 .logout-btn {
   display: flex; align-items: center; gap: 0.75rem; width: 100%;
