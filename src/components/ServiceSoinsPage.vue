@@ -58,25 +58,6 @@ const service = computed(() => services.value.find((s) => s.id === props.service
 const soins = computed(() => service.value?.soins ?? []);
 
 // Pagination for Soins
-const ITEMS_PER_PAGE = 3;
-const soinsCurrentPage = ref(1);
-const totalSoinPages = computed(() => Math.ceil(soins.value.length / ITEMS_PER_PAGE));
-const paginatedSoins = computed(() => {
-  const start = (soinsCurrentPage.value - 1) * ITEMS_PER_PAGE;
-  return soins.value.slice(start, start + ITEMS_PER_PAGE);
-});
-
-const nextSoinPage = () => {
-  if (soinsCurrentPage.value < totalSoinPages.value) {
-    soinsCurrentPage.value++;
-  }
-};
-
-const prevSoinPage = () => {
-  if (soinsCurrentPage.value > 1) {
-    soinsCurrentPage.value--;
-  }
-};
 
 const isModalOpen = ref(false);
 const activeSoinId = ref<number | null>(null);
@@ -565,7 +546,7 @@ onMounted(() => {
           
           <div class="soins-grid">
             <button
-              v-for="soin in paginatedSoins"
+              v-for="soin in soins"
               :key="soin.id"
               class="soin-card"
               :class="{ saved: isSoinSaved(soin.id) }"
@@ -584,27 +565,6 @@ onMounted(() => {
                 <span v-if="isSoinSaved(soin.id)">{{ tx('Déjà ajouté', 'تمت الإضافة') }}</span>
                 <span v-else>{{ tx('Remplir le formulaire', 'ملء النموذج') }}</span>
               </div>
-            </button>
-          </div>
-
-          <!-- Pagination Controls -->
-          <div v-if="totalSoinPages > 1" class="pagination-controls">
-            <button 
-              class="btn-pagination" 
-              :disabled="soinsCurrentPage === 1" 
-              @click="prevSoinPage"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-              Précédent
-            </button>
-            <span class="page-indicator">{{ isAr ? `الصفحة ${soinsCurrentPage} من ${totalSoinPages}` : `Page ${soinsCurrentPage} sur ${totalSoinPages}` }}</span>
-            <button 
-              class="btn-pagination" 
-              :disabled="soinsCurrentPage === totalSoinPages" 
-              @click="nextSoinPage"
-            >
-              {{ tx('Suivant', 'التالي') }}
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </button>
           </div>
           
