@@ -98,6 +98,10 @@ const fetchServices = async () => {
   }
 };
 
+const sortedServices = computed(() => {
+  return [...services.value].sort((a, b) => a.id - b.id);
+});
+
 onMounted(() => {
   fetchServices();
 });
@@ -169,7 +173,7 @@ onUnmounted(() => {
           
           <div v-else class="services-grid">
             <div 
-              v-for="(service, index) in services.slice(0, 4)" 
+              v-for="(service, index) in sortedServices.slice(0, 6)" 
               :key="service.id" 
               class="service-card glass compact-card"
               :style="{ animationDelay: `${index * 100}ms` }"
