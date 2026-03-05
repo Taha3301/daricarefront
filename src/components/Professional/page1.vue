@@ -49,6 +49,8 @@ const isProMenuOpen = ref(false);
 const isDetailsModalOpen = ref(false);
 const selectedRequest = ref<any>(null);
 const isFetchingDetails = ref(false);
+const acceptingRequestId = ref<number | null>(null);
+const decliningRequestId = ref<number | null>(null);
 const activeSubView = ref('requests'); // 'requests' or 'accepted'
 const acceptedRequestsList = ref<any[]>([]);
 const distances = ref<Record<number, number>>({});
@@ -710,8 +712,9 @@ const translateType = (type: string) => {
 
 const acceptRequest = async (id: number) => {
   const token = localStorage.getItem('access_token');
-  if (!token) return;
+  if (!token || acceptingRequestId.value === id) return;
 
+  acceptingRequestId.value = id;
   try {
     const response = await fetch(getApiUrl(`/bookings/${id}/accept`), {
       method: 'POST',
@@ -725,20 +728,22 @@ const acceptRequest = async (id: number) => {
       activeRequests.value = activeRequests.value.filter(n => n.id !== id);
       notifications.value = notifications.value.filter(n => n.reference_id !== id);
       await fetchInitialData();
-      alert('Demande acceptée avec succès !');
     } else {
       const error = await response.json();
-      alert(`Erreur: ${error.message || 'Impossible d\'accepter la demande'}`);
+      console.error(`Erreur: ${error.message || 'Impossible d\'accepter la demande'}`);
     }
   } catch (err) {
     console.error('Error accepting request:', err);
+  } finally {
+    acceptingRequestId.value = null;
   }
 };
 
 const declineRequest = async (id: number) => {
   const token = localStorage.getItem('access_token');
-  if (!token) return;
+  if (!token || decliningRequestId.value === id) return;
 
+  decliningRequestId.value = id;
   try {
     const response = await fetch(getApiUrl(`/bookings/${id}/deny`), {
       method: 'POST',
@@ -752,13 +757,14 @@ const declineRequest = async (id: number) => {
       activeRequests.value = activeRequests.value.filter(n => n.id !== id);
       notifications.value = notifications.value.filter(n => n.reference_id !== id);
       await fetchInitialData();
-      alert('Demande refusée.');
     } else {
       const error = await response.json();
-      alert(`Erreur: ${error.message || 'Impossible de refuser la demande'}`);
+      console.error(`Erreur: ${error.message || 'Impossible de refuser la demande'}`);
     }
   } catch (err) {
     console.error('Error declining request:', err);
+  } finally {
+    decliningRequestId.value = null;
   }
 };
 
@@ -882,8 +888,14 @@ const formatDate = (dateStr: string) => {
           <button class="notif-close" @click="removeNotification(notif.id)">×</button>
         </div>
         <div class="notif-actions">
-          <button class="btn-mini btn-decline" @click="declineRequest(notif.reference_id)">Refuser</button>
-          <button class="btn-mini btn-accept" @click="acceptRequest(notif.reference_id)">Accepter</button>
+          <button class="btn-mini btn-decline" @click="declineRequest(notif.reference_id)" :disabled="decliningRequestId === notif.reference_id || acceptingRequestId === notif.reference_id">
+            <span v-if="decliningRequestId === notif.reference_id" class="btn-spinner"></span>
+            <span v-else>Refuser</span>
+          </button>
+          <button class="btn-mini btn-accept" @click="acceptRequest(notif.reference_id)" :disabled="acceptingRequestId === notif.reference_id || decliningRequestId === notif.reference_id">
+            <span v-if="acceptingRequestId === notif.reference_id" class="btn-spinner"></span>
+            <span v-else>Accepter</span>
+          </button>
         </div>
       </div>
     </div>
@@ -1066,8 +1078,14 @@ const formatDate = (dateStr: string) => {
   
             <div class="card-actions">
               <button class="btn btn-details" @click="showRequestDetails(req)">Détails</button>
-              <button class="btn btn-decline" @click="declineRequest(req.id)">Refuser</button>
-              <button class="btn btn-accept" @click="acceptRequest(req.id)">Accepter la demande</button>
+              <button class="btn btn-decline" @click="declineRequest(req.id)" :disabled="decliningRequestId === req.id || acceptingRequestId === req.id">
+                <span v-if="decliningRequestId === req.id" class="btn-spinner"></span>
+                <span v-else>Refuser</span>
+              </button>
+              <button class="btn btn-accept" @click="acceptRequest(req.id)" :disabled="acceptingRequestId === req.id || decliningRequestId === req.id">
+                <span v-if="acceptingRequestId === req.id" class="btn-spinner"></span>
+                <span v-else>Accepter la demande</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1160,8 +1178,14 @@ const formatDate = (dateStr: string) => {
             <div class="card-actions">
               <button class="btn btn-details" @click="showRequestDetails(req)">Détails</button>
               <template v-if="req.displayStatus === 'pending'">
-                <button class="btn btn-decline" @click="declineRequest(req.id)">Refuser</button>
-                <button class="btn btn-accept" @click="acceptRequest(req.id)">Accepter</button>
+                <button class="btn btn-decline" @click="declineRequest(req.id)" :disabled="decliningRequestId === req.id || acceptingRequestId === req.id">
+                  <span v-if="decliningRequestId === req.id" class="btn-spinner"></span>
+                  <span v-else>Refuser</span>
+                </button>
+                <button class="btn btn-accept" @click="acceptRequest(req.id)" :disabled="acceptingRequestId === req.id || decliningRequestId === req.id">
+                  <span v-if="acceptingRequestId === req.id" class="btn-spinner"></span>
+                  <span v-else>Accepter</span>
+                </button>
               </template>
               <a v-if="req.displayStatus === 'accepted' && req.phone" :href="'tel:' + req.phone" class="btn btn-contact">Appeler</a>
             </div>
@@ -3685,5 +3709,24 @@ const formatDate = (dateStr: string) => {
 }
 .border-none {
   border: none !important;
+}
+
+.btn-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: btn-spin 0.6s linear infinite;
+  display: inline-block;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
 }
 </style>

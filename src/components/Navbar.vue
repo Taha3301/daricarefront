@@ -61,7 +61,7 @@ onUnmounted(() => {
       <div class="navbar-menu" :class="{ 'is-open': isMenuOpen }">
         <a href="#" class="menu-link" @click.prevent="handleNavigate('landing')">{{ t.nav_patient }}</a>
         <a href="#" class="menu-link" @click.prevent="handleNavigate('login')">{{ t.nav_idel }}</a>
-        <a href="#" class="menu-link" @click.prevent="handleNavigate('landing')">{{ t.nav_aide }}</a>
+        <a href="#" class="menu-link" @click.prevent="handleNavigate('help')">{{ t.nav_aide }}</a>
         
         <!-- Mobile-only CTA -->
         <div class="mobile-cta">

@@ -102,20 +102,7 @@ const handleLogin = async () => {
         <h1>{{ t.login_title }}</h1>
         <p>{{ t.login_subtitle }}</p>
         
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-value">10k+</span>
-            <span class="stat-label">{{ t.login_stats_patients }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value">500+</span>
-            <span class="stat-label">{{ t.login_stats_idel }}</span>
-          </div>
-        </div>
 
-        <div class="support-message">
-          <p>{{ t.login_support }} <a href="#">{{ t.login_contact_support }}</a></p>
-        </div>
       </div>
     </div>
 
@@ -210,15 +197,16 @@ const handleLogin = async () => {
 <style scoped>
 .login-wrapper {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   width: 100vw;
   background-color: white;
+  overflow: hidden;
 }
 
 /* Left Side: Info */
 .login-info-side {
   flex: 1.2;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: linear-gradient(135deg, #1e3a8a 0%, #2b69ad 50%, #1d4d82 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -271,35 +259,7 @@ const handleLogin = async () => {
   margin-bottom: 3rem;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
 
-.stat-value {
-  display: block;
-  font-size: 2rem;
-  font-weight: 800;
-}
-
-.stat-label {
-  font-size: 1rem;
-  opacity: 0.8;
-}
-
-.support-message {
-  margin-top: 4rem;
-  font-size: 0.95rem;
-  opacity: 0.9;
-}
-
-.support-message a {
-  color: white;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
 
 /* Right Side: Form */
 .login-form-side {
@@ -309,6 +269,8 @@ const handleLogin = async () => {
   justify-content: center;
   padding: 2rem;
   background-color: var(--bg-light);
+  overflow-y: auto;
+  height: 100%;
 }
 
 .login-card {

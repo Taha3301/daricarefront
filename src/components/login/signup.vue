@@ -16,6 +16,17 @@ const showPassword = ref(false);
 const isLoading = ref(false);
 const rememberMe = ref(false);
 const errorMessage = ref('');
+const currentStep = ref(1);
+
+const nextStep = () => {
+  if (name.value && email.value) {
+    currentStep.value = 2;
+  }
+};
+
+const prevStep = () => {
+  currentStep.value = 1;
+};
 
 const handleSignup = async () => {
   errorMessage.value = '';
@@ -78,20 +89,7 @@ const handleSignup = async () => {
         <h1>{{ t.signup_title }}</h1>
         <p>{{ t.signup_subtitle }}</p>
         
-        <div class="features-list">
-          <div class="feature-item">
-            <span class="feature-icon">✨</span>
-            <p>{{ t.footer_svc4 }}</p>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">🤝</span>
-            <p>{{ t.footer_svc3 }}</p>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">📱</span>
-            <p>{{ t.footer_svc1 }}</p>
-          </div>
-        </div>
+        
       </div>
     </div>
 
@@ -108,108 +106,119 @@ const handleSignup = async () => {
         </div>
 
         <form @submit.prevent="handleSignup" class="signup-form">
-          <!-- Name Input -->
-          <div class="input-group">
-            <label for="name">{{ t.signup_name_label }}</label>
-            <div class="input-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-              <input 
-                v-model="name" 
-                type="text" 
-                id="name" 
-                placeholder="Dr. Jean Dupont" 
-                required
-                :disabled="isLoading"
-              />
+          <!-- Step 1: Name & Email -->
+          <div v-if="currentStep === 1" class="step-container">
+            <div class="input-group">
+              <label for="name">{{ t.signup_name_label }}</label>
+              <div class="input-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <input 
+                  v-model="name" 
+                  type="text" 
+                  id="name" 
+                  placeholder="Dr. Jean Dupont" 
+                  required
+                  :disabled="isLoading"
+                />
+              </div>
             </div>
+
+            <div class="input-group">
+              <label for="email">{{ t.login_email_label }}</label>
+              <div class="input-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                <input 
+                  v-model="email" 
+                  type="email" 
+                  id="email" 
+                  placeholder="jean@exemple.com" 
+                  required
+                  :disabled="isLoading"
+                />
+              </div>
+            </div>
+
+            <button type="button" class="signup-button" @click="nextStep" :disabled="!name || !email">
+              {{ currentLang === 'ar' ? 'التالي' : 'Suivant' }}
+            </button>
           </div>
 
-          <!-- Email Input -->
-          <div class="input-group">
-            <label for="email">{{ t.login_email_label }}</label>
-            <div class="input-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
-              </svg>
-              <input 
-                v-model="email" 
-                type="email" 
-                id="email" 
-                placeholder="jean@exemple.com" 
-                required
-                :disabled="isLoading"
-              />
+          <!-- Step 2: Password -->
+          <div v-if="currentStep === 2" class="step-container">
+            <div class="input-group">
+              <label for="password">{{ t.login_password_label }}</label>
+              <div class="input-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input 
+                  v-model="password" 
+                  :type="showPassword ? 'text' : 'password'" 
+                  id="password" 
+                  placeholder="••••••••" 
+                  required
+                  :disabled="isLoading"
+                />
+                <button 
+                  type="button" 
+                  class="toggle-password" 
+                  @click="showPassword = !showPassword"
+                  tabindex="-1"
+                >
+                  <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
 
-          <!-- Password Input -->
-          <div class="input-group">
-            <label for="password">{{ t.login_password_label }}</label>
-            <div class="input-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              <input 
-                v-model="password" 
-                :type="showPassword ? 'text' : 'password'" 
-                id="password" 
-                placeholder="••••••••" 
-                required
-                :disabled="isLoading"
-              />
-              <button 
-                type="button" 
-                class="toggle-password" 
-                @click="showPassword = !showPassword"
-                tabindex="-1"
-              >
-                <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
+            <div class="input-group">
+              <label for="confirmPassword">{{ t.login_password_label }} ({{ t.nav_lang_label }})</label>
+              <div class="input-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
+                <input 
+                  v-model="confirmPassword" 
+                  :type="showPassword ? 'text' : 'password'" 
+                  id="confirmPassword" 
+                  placeholder="••••••••" 
+                  required
+                  :disabled="isLoading"
+                />
+              </div>
+            </div>
+
+            <div class="form-options">
+              <label class="checkbox-container">
+                <input type="checkbox" v-model="rememberMe" :disabled="isLoading">
+                <span class="checkmark"></span>
+                {{ t.login_remember_me }}
+              </label>
+            </div>
+
+            <div class="button-group">
+              <button type="button" class="back-button" @click="prevStep" :disabled="isLoading">
+                {{ currentLang === 'ar' ? 'السابق' : 'Retour' }}
+              </button>
+              <button type="submit" class="signup-button" :disabled="isLoading || !password">
+                {{ isLoading ? t.signup_loading : t.signup_btn }}
               </button>
             </div>
           </div>
-
-          <!-- Confirm Password Input -->
-          <div class="input-group">
-            <label for="confirmPassword">{{ t.login_password_label }} ({{ t.nav_lang_label }})</label>
-            <div class="input-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="input-icon">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              <input 
-                v-model="confirmPassword" 
-                :type="showPassword ? 'text' : 'password'" 
-                id="confirmPassword" 
-                placeholder="••••••••" 
-                required
-                :disabled="isLoading"
-              />
-            </div>
-          </div>
-
-          <div class="form-options">
-            <label class="checkbox-container">
-              <input type="checkbox" v-model="rememberMe" :disabled="isLoading">
-              <span class="checkmark"></span>
-              {{ t.login_remember_me }}
-            </label>
-          </div>
-
-          <button type="submit" class="signup-button" :disabled="isLoading">
-            {{ isLoading ? t.signup_loading : t.signup_btn }}
-          </button>
         </form>
 
         <div class="signup-footer">
@@ -223,15 +232,16 @@ const handleSignup = async () => {
 <style scoped>
 .signup-wrapper {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   width: 100vw;
   background-color: white;
+  overflow: hidden;
 }
 
 /* Left Side: Info */
 .signup-info-side {
   flex: 1.2;
-  background: linear-gradient(135deg, #2b69ad, #69aa62);
+  background: linear-gradient(135deg, #1e3a8a 0%, #2b69ad 50%, #1d4d82 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -285,27 +295,7 @@ const handleSignup = async () => {
   margin-bottom: 3rem;
 }
 
-.features-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
 
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.feature-icon {
-  font-size: 1.5rem;
-}
-
-.feature-item p {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 500;
-}
 
 /* Right Side: Form */
 .signup-form-side {
@@ -315,13 +305,15 @@ const handleSignup = async () => {
   justify-content: center;
   padding: 2rem;
   background-color: #f8fafc;
+  overflow-y: auto;
+  height: 100%;
 }
 
 .signup-card {
   width: 100%;
-  max-width: 480px;
+  max-width: 420px;
   background: white;
-  padding: 3rem;
+  padding: 2.5rem;
   border-radius: 24px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
 }
@@ -342,7 +334,7 @@ const handleSignup = async () => {
 .signup-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .input-row {
@@ -399,7 +391,38 @@ const handleSignup = async () => {
   cursor: pointer;
 }
 
+.step-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.back-button {
+  flex: 1;
+  background: white;
+  color: #4a5568;
+  padding: 1rem;
+  border: 2px solid #edf2f7;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: #f8fafc;
+  border-color: #cbd5e0;
+}
+
 .signup-button {
+  flex: 2;
   background: #2b69ad;
   color: white;
   padding: 1rem;
@@ -409,12 +432,16 @@ const handleSignup = async () => {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-top: 1rem;
 }
 
-.signup-button:hover {
+.signup-button:hover:not(:disabled) {
   background: #1d4d82;
   transform: translateY(-1px);
+}
+
+.signup-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .signup-footer {

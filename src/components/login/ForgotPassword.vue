@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { getApiUrl } from '../../config/api';
+import logoUrl from '../../assets/LOGO H.png';
 
 const emit = defineEmits(['navigate']);
 
@@ -53,25 +54,12 @@ const handleForgotPassword = async () => {
     <div class="login-info-side">
       <div class="info-content">
         <div class="brand-badge" @click="emit('navigate', 'landing')" style="cursor: pointer;">
-          <img src="../../assets/LOGO H.png" alt="daricare logo" class="brand-logo-img" />
+          <img :src="logoUrl" alt="daricare logo" class="brand-logo-img" />
         </div>
         <h1>Récupérez votre <br/>accès en un clic.</h1>
         <p>Entrez votre adresse email et nous vous enverrons un lien sécurisé pour réinitialiser votre mot de passe.</p>
         
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-value">Simple</span>
-            <span class="stat-label">Processus rapide</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value">Sécurisé</span>
-            <span class="stat-label">Chiffrement AES</span>
-          </div>
-        </div>
-
-        <div class="support-message">
-          <p>Besoin d'aide ? <a href="#">Contactez notre support</a></p>
-        </div>
+        
       </div>
     </div>
 
@@ -134,15 +122,16 @@ const handleForgotPassword = async () => {
 <style scoped>
 .login-wrapper {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   width: 100vw;
   background-color: white;
+  overflow: hidden;
 }
 
 /* Left Side: Info */
 .login-info-side {
   flex: 1.2;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: linear-gradient(135deg, #1e3a8a 0%, #2b69ad 50%, #1d4d82 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -195,35 +184,7 @@ const handleForgotPassword = async () => {
   margin-bottom: 3rem;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
 
-.stat-value {
-  display: block;
-  font-size: 1.5rem;
-  font-weight: 800;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  opacity: 0.8;
-}
-
-.support-message {
-  margin-top: 4rem;
-  font-size: 0.95rem;
-  opacity: 0.9;
-}
-
-.support-message a {
-  color: white;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
 
 /* Right Side: Form */
 .login-form-side {
@@ -233,6 +194,8 @@ const handleForgotPassword = async () => {
   justify-content: center;
   padding: 2rem;
   background-color: var(--bg-light);
+  overflow-y: auto;
+  height: 100%;
 }
 
 .login-card {
