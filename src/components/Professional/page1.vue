@@ -629,8 +629,9 @@ const initWebSocket = () => {
       
       // 3. Show RICH Browser Notification once we have details
       const formattedDate = details.date ? formatDate(details.date) : formatDate(details.createdAt);
+      const genderLabel = details.gender === 'male' ? 'Homme' : details.gender === 'female' ? 'Femme' : 'Indifférent';
       const title = `📅 ${formattedDate} - ${details.patientFirstname} ${details.patientLastname}`;
-      const body = `🩺 Soin: ${translateType(details.service?.name)}\n📍 ${details.address}\n⚠️ Urgence: ${details.urgency}`;
+      const body = `🩺 Soin: ${translateType(details.service?.name)}\n📍 ${details.address}\n⚠️ Urgence: ${details.urgency}\n👤 Genre souhaité: ${genderLabel}`;
       showBrowserNotification(title, body);
 
       // Update the main requests list if not already there
@@ -882,6 +883,9 @@ const formatDate = (dateStr: string) => {
               {{ notif.bookingDetails.address }}
               <br/>
               <span v-if="notif.bookingDetails.service" class="type-tag">{{ translateType(notif.bookingDetails.service.name) }}</span>
+              <span v-if="notif.bookingDetails.gender" class="gender-tag-mini" :class="notif.bookingDetails.gender">
+                {{ notif.bookingDetails.gender === 'male' ? '♂ Homme' : notif.bookingDetails.gender === 'female' ? '♀ Femme' : '⚥ Indifférent' }}
+              </span>
             </p>
             <p v-else class="loading-data">{{ notif.message }}...</p>
           </div>
@@ -1069,6 +1073,11 @@ const formatDate = (dateStr: string) => {
                 {{ translateType(req.service?.name) }}
               </div>
               <p class="request-description">Demande de soin pour le service {{ req.service?.name }}.</p>
+              <div class="card-meta-tags">
+                <div v-if="req.gender" class="gender-badge" :class="req.gender">
+                  {{ req.gender === 'male' ? 'Homme souhaité' : req.gender === 'female' ? 'Femme souhaitée' : 'Genre indifférent' }}
+                </div>
+              </div>
               <div v-if="req.requestSoins?.length" class="soins-tags">
                 <span v-for="soinItem in req.requestSoins" :key="soinItem.id" class="soin-tag">
                   {{ soinItem.soin?.name }}
@@ -1168,6 +1177,11 @@ const formatDate = (dateStr: string) => {
                 {{ translateType(req.service?.name) }}
               </div>
               <p class="request-description">Demande de soin pour le service {{ req.service?.name }}.</p>
+              <div class="card-meta-tags">
+                <div v-if="req.gender" class="gender-badge" :class="req.gender">
+                  {{ req.gender === 'male' ? 'Homme souhaité' : req.gender === 'female' ? 'Femme souhaitée' : 'Genre indifférent' }}
+                </div>
+              </div>
               <div v-if="req.requestSoins?.length" class="soins-tags">
                 <span v-for="soinItem in req.requestSoins" :key="soinItem.id" class="soin-tag">
                   {{ soinItem.soin?.name }}
@@ -1241,6 +1255,11 @@ const formatDate = (dateStr: string) => {
                 {{ translateType(req.service?.name) }}
               </div>
               <p class="request-description">Soin programmé pour {{ req.patientFirstname }}.</p>
+              <div class="card-meta-tags">
+                <div v-if="req.gender" class="gender-badge" :class="req.gender">
+                  {{ req.gender === 'male' ? 'Homme souhaité' : req.gender === 'female' ? 'Femme souhaitée' : 'Genre indifférent' }}
+                </div>
+              </div>
               <div v-if="req.requestSoins?.length" class="soins-tags">
                 <span v-for="soinItem in req.requestSoins" :key="soinItem.id" class="soin-tag">
                   {{ soinItem.soin?.name }}
@@ -1317,6 +1336,11 @@ const formatDate = (dateStr: string) => {
                 {{ translateType(req.service?.name) }}
               </div>
               <p class="request-description">Soin terminé avec succès.</p>
+              <div class="card-meta-tags">
+                <div v-if="req.preferredGender" class="gender-badge" :class="req.preferredGender">
+                  {{ req.preferredGender === 'M' ? 'Homme souhaité' : req.preferredGender === 'F' ? 'Femme souhaitée' : 'Genre indifférent' }}
+                </div>
+              </div>
               <div v-if="req.requestSoins?.length" class="soins-tags">
                 <span v-for="soinItem in req.requestSoins" :key="soinItem.id" class="soin-tag">
                   {{ soinItem.soin?.name }}
@@ -1484,6 +1508,12 @@ const formatDate = (dateStr: string) => {
                   <div class="detail-item">
                     <label>Fenêtre de disponibilité</label>
                     <span class="highlight-val">{{ selectedRequest.availabilityStart?.substring(0, 5) }} — {{ selectedRequest.availabilityEnd?.substring(0, 5) }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>Genre du professionnel souhaité</label>
+                    <span class="gender-val" :class="selectedRequest.gender">
+                      {{ selectedRequest.gender === 'male' ? '♂ Homme' : selectedRequest.gender === 'female' ? '♀ Femme' : '⚥ Indifférent' }}
+                    </span>
                   </div>
                   <div class="detail-item">
                     <label>Préférence "Indifférent"</label>
@@ -3710,6 +3740,48 @@ const formatDate = (dateStr: string) => {
 .border-none {
   border: none !important;
 }
+
+.gender-tag-mini {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 4px;
+  margin-left: 8px;
+}
+
+.gender-tag-mini.male { background: #eff6ff; color: #1d4ed8; }
+.gender-tag-mini.female { background: #fdf2f8; color: #be185d; }
+.gender-tag-mini.any { background: #f3f4f6; color: #4b5563; }
+
+.card-meta-tags {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.gender-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.gender-badge.male { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
+.gender-badge.female { background: #fdf2f8; color: #be185d; border: 1px solid #fce7f3; }
+.gender-badge.any { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
+
+.gender-val {
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.gender-val.male { color: #1d4ed8; background: rgba(29, 78, 216, 0.1); }
+.gender-val.female { color: #be185d; background: rgba(190, 24, 93, 0.1); }
+.gender-val.any { color: #4b5563; background: rgba(75, 85, 99, 0.1); }
 
 .btn-spinner {
   width: 18px;

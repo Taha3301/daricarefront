@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { getApiUrl, getUploadUrl } from '../config/api';
+import { useLanguage } from '../composables/useLanguage';
+const { t, isAr } = useLanguage();
 
 type Service = {
   id: number;
   name: string;
+  name_ar?: string | null;
   description?: string | null;
+  description_ar?: string | null;
   image?: string | null;
 };
 
@@ -77,15 +81,15 @@ onMounted(fetchServices);
     <!-- Back button top right -->
     <button class="btn-back-top" @click="emit('navigate', 'landing')">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-      Retour à l'accueil
+      {{ t ? t.sel_back : 'Retour à l\'accueil' }}
     </button>
 
     <!-- Main content -->
     <div class="page-content">
-      <div class="page-header">
-        <p class="page-tag">Soins à domicile</p>
-        <h1 class="page-title">De quel professionnel<br/>avez-vous besoin ?</h1>
-        <p class="page-subtitle">Sélectionnez le type de service pour votre demande de soins à domicile.</p>
+      <div class="page-header" :dir="isAr ? 'rtl' : 'ltr'">
+        <p class="page-tag">{{ t ? t.sel_tag : 'Soins à domicile' }}</p>
+        <h1 class="page-title" v-html="t ? t.sel_title : 'De quel professionnel<br/>avez-vous besoin ?'"></h1>
+        <p class="page-subtitle">{{ t ? t.sel_subtitle : 'Sélectionnez le type de service pour votre demande de soins à domicile.' }}</p>
       </div>
 
       <!-- Loading -->
@@ -121,15 +125,15 @@ onMounted(fetchServices);
           <div v-if="!service.image" class="item-emoji-bg">{{ getServiceIcon(service.name) }}</div>
 
           <!-- Info -->
-          <div class="item-info">
-            <span class="item-name">{{ service.name }}</span>
-            <span class="item-desc">{{ service.description || 'Soins professionnels à domicile.' }}</span>
+          <div class="item-info" :dir="isAr ? 'rtl' : 'ltr'">
+            <span class="item-name">{{ isAr && service.name_ar ? service.name_ar : service.name }}</span>
+            <span class="item-desc">{{ (isAr && service.description_ar ? service.description_ar : service.description) || (t ? t.sel_default_desc : 'Soins professionnels à domicile.') }}</span>
           </div>
 
           <!-- Arrow -->
-          <div class="item-arrow">
+          <div class="item-arrow" :dir="isAr ? 'rtl' : 'ltr'">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-            Choisir
+            {{ t ? t.sel_choose : 'Choisir' }}
           </div>
         </button>
       </div>

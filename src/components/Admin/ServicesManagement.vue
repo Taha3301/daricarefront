@@ -17,7 +17,9 @@ const soins = ref<any[]>([]);
 
 const serviceForm = ref({
   name: '',
+  name_ar: '',
   description: '',
+  description_ar: '',
   image: null as File | null
 });
 
@@ -32,17 +34,27 @@ const handleFileChange = (event: Event) => {
 
 const soinForm = ref({
   name: '',
+  name_ar: '',
   description: '',
+  description_ar: '',
   price: 0,
   serviceId: 0
 });
 
-const contentForm = ref({
-  id: null as number | null,
-  type: 'text' as 'checkbox' | 'radio' | 'dropdown' | 'text',
+const contentForm = ref<{
+  id: number | null;
+  type: 'checkbox' | 'radio' | 'dropdown' | 'text';
+  name: string;
+  name_ar: string;
+  choices: string[];
+  choices_ar: string[];
+}>({
+  id: null,
+  type: 'text',
   name: '',
-  choices: [] as string[],
-  newChoice: ''
+  name_ar: '',
+  choices: [],
+  choices_ar: []
 });
 
 const editingContent = ref<any>(null);
@@ -94,7 +106,9 @@ const handleSaveService = async () => {
 
   const formData = new FormData();
   formData.append('name', serviceForm.value.name);
-  formData.append('description', serviceForm.value.description);
+  if (serviceForm.value.name_ar) formData.append('name_ar', serviceForm.value.name_ar);
+  if (serviceForm.value.description) formData.append('description', serviceForm.value.description);
+  if (serviceForm.value.description_ar) formData.append('description_ar', serviceForm.value.description_ar);
   if (serviceForm.value.image) {
     formData.append('image', serviceForm.value.image);
   }
@@ -157,10 +171,13 @@ const handleSaveSoin = async () => {
   // Construct payload explicitly as per Swagger
   const payload: any = {
     name: soinForm.value.name,
-    description: soinForm.value.description,
     price: Number(soinForm.value.price),
     serviceId: Number(selectedService.value.id)
   };
+
+  if (soinForm.value.name_ar) payload.name_ar = soinForm.value.name_ar;
+  if (soinForm.value.description) payload.description = soinForm.value.description;
+  if (soinForm.value.description_ar) payload.description_ar = soinForm.value.description_ar;
 
   try {
     const response = await fetch(url, {
@@ -243,8 +260,11 @@ const handleSaveContent = async () => {
     soinId: Number(selectedSoin.value.id)
   };
 
+  if (contentForm.value.name_ar) payload.name_ar = contentForm.value.name_ar;
+
   if (type !== 'text') {
     payload.choices = contentForm.value.choices;
+    payload.choices_ar = contentForm.value.choices_ar;
   }
 
   try {
@@ -295,14 +315,13 @@ const handleDeleteContent = async (item: any, type: string) => {
 };
 
 const addChoice = () => {
-  if (contentForm.value.newChoice.trim()) {
-    contentForm.value.choices.push(contentForm.value.newChoice.trim());
-    contentForm.value.newChoice = '';
-  }
+  contentForm.value.choices.push('');
+  contentForm.value.choices_ar.push('');
 };
 
 const removeChoice = (index: number) => {
   contentForm.value.choices.splice(index, 1);
+  contentForm.value.choices_ar.splice(index, 1);
 };
 
 const openServiceModal = (service: any = null) => {
@@ -310,7 +329,9 @@ const openServiceModal = (service: any = null) => {
     editingService.value = service;
     serviceForm.value = { 
       name: service.name, 
+      name_ar: service.name_ar || '',
       description: service.description,
+      description_ar: service.description_ar || '',
       image: null
     };
   } else {
@@ -324,7 +345,9 @@ const openSoinModal = (soin: any = null) => {
     editingSoin.value = soin;
     soinForm.value = { 
       name: soin.name, 
+      name_ar: soin.name_ar || '',
       description: soin.description, 
+      description_ar: soin.description_ar || '',
       price: soin.price || 0,
       serviceId: selectedService.value.id 
     };
@@ -342,8 +365,9 @@ const openContentModal = (item: any = null, type: any = 'text') => {
       id: item.id,
       type: type,
       name: item.name,
+      name_ar: item.name_ar || '',
       choices: item.choices ? [...item.choices] : [],
-      newChoice: ''
+      choices_ar: item.choices_ar ? [...item.choices_ar] : (item.choices ? item.choices.map(() => '') : [])
     };
   } else {
     resetContentForm();
@@ -353,12 +377,12 @@ const openContentModal = (item: any = null, type: any = 'text') => {
 
 const resetServiceForm = () => {
   editingService.value = null;
-  serviceForm.value = { name: '', description: '', image: null };
+  serviceForm.value = { name: '', name_ar: '', description: '', description_ar: '', image: null };
 };
 
 const resetSoinForm = () => {
   editingSoin.value = null;
-  soinForm.value = { name: '', description: '', price: 0, serviceId: 0 };
+  soinForm.value = { name: '', name_ar: '', description: '', description_ar: '', price: 0, serviceId: 0 };
 };
 
 const resetContentForm = () => {
@@ -368,8 +392,9 @@ const resetContentForm = () => {
     id: null,
     type: 'text',
     name: '',
+    name_ar: '',
     choices: [],
-    newChoice: ''
+    choices_ar: []
   };
 };
 
@@ -555,8 +580,12 @@ onMounted(fetchServices);
         <h2>{{ editingService ? 'Modifier le Service' : 'Nouveau Service' }}</h2>
         <form @submit.prevent="handleSaveService" class="admin-form">
           <div class="form-group">
-            <label>Nom du service</label>
+            <label>Nom du service (FR)</label>
             <input v-model="serviceForm.name" type="text" placeholder="Ex: Soins Infirmiers" required />
+          </div>
+          <div class="form-group">
+            <label>Nom du service (AR)</label>
+            <input v-model="serviceForm.name_ar" type="text" placeholder="مثال: خدمات التمريض" dir="rtl" />
           </div>
           <div class="form-group">
             <label>Image du service</label>
@@ -567,8 +596,12 @@ onMounted(fetchServices);
             </div>
           </div>
           <div class="form-group">
-            <label>Description</label>
+            <label>Description (FR)</label>
             <textarea v-model="serviceForm.description" placeholder="Description du service..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Description (AR)</label>
+            <textarea v-model="serviceForm.description_ar" placeholder="وصف الخدمة..." dir="rtl"></textarea>
           </div>
           <div class="modal-actions">
             <button type="button" class="cancel-btn" @click="showServiceModal = false">Annuler</button>
@@ -585,16 +618,24 @@ onMounted(fetchServices);
         <p class="modal-subtitle">Pour le service: {{ selectedService?.name }}</p>
         <form @submit.prevent="handleSaveSoin" class="admin-form">
           <div class="form-group">
-            <label>Nom du soin</label>
+            <label>Nom du soin (FR)</label>
             <input v-model="soinForm.name" type="text" placeholder="Ex: Pansement simple" required />
+          </div>
+          <div class="form-group">
+            <label>Nom du soin (AR)</label>
+            <input v-model="soinForm.name_ar" type="text" placeholder="مثال: تضميد بسيط" dir="rtl" />
           </div>
           <div class="form-group">
             <label>Prix (DT)</label>
             <input v-model="soinForm.price" type="number" step="0.001" placeholder="Ex: 15.500" required />
           </div>
           <div class="form-group">
-            <label>Description</label>
+            <label>Description (FR)</label>
             <textarea v-model="soinForm.description" placeholder="Description du soin..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Description (AR)</label>
+            <textarea v-model="soinForm.description_ar" placeholder="وصف العلاج..." dir="rtl"></textarea>
           </div>
           <div class="modal-actions">
             <button type="button" class="cancel-btn" @click="showSoinModal = false">Annuler</button>
@@ -621,23 +662,51 @@ onMounted(fetchServices);
           </div>
 
           <div class="form-group">
-            <label>Question / Libellé</label>
+            <label>Question / Libellé (FR)</label>
             <input v-model="contentForm.name" type="text" placeholder="Ex: Avez-vous une ordonnance ?" required />
           </div>
+          <div class="form-group">
+            <label>Question / Libellé (AR)</label>
+            <input v-model="contentForm.name_ar" type="text" placeholder="مثال: هل لديك وصفة طبية؟" dir="rtl" />
+          </div>
 
-          <div v-if="contentForm.type !== 'text'" class="choices-section">
-            <label>Options de réponse</label>
-            <div class="choice-input-group">
-              <input v-model="contentForm.newChoice" type="text" placeholder="Ajouter une option..." @keyup.enter.prevent="addChoice" />
-              <button type="button" class="add-choice-btn" @click="addChoice">Ajouter</button>
-            </div>
-            
-            <div class="choices-list">
-              <div v-for="(choice, index) in contentForm.choices" :key="index" class="choice-tag">
-                {{ choice }}
-                <span class="remove-choice" @click="removeChoice(index)">&times;</span>
+          <div v-if="contentForm.type !== 'text'" class="choices-container">
+            <label class="field-label-main">Choix (Français & Arabe)</label>
+            <div class="choices-scroll-area">
+              <div v-for="(_, index) in contentForm.choices" :key="index" class="choice-row">
+                <div class="choice-inputs">
+                  <input 
+                    v-model="contentForm.choices[index]" 
+                    type="text" 
+                    class="choice-input fr"
+                    placeholder="Option en Français"
+                  />
+                  <input 
+                    v-model="contentForm.choices_ar[index]" 
+                    type="text" 
+                    dir="rtl"
+                    class="choice-input ar"
+                    placeholder="الخيار بالعربية"
+                  />
+                </div>
+                <button 
+                  type="button"
+                  @click="removeChoice(index)" 
+                  class="remove-btn"
+                  title="Supprimer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
               </div>
             </div>
+            <button 
+              type="button"
+              @click="addChoice" 
+              class="add-choice-row-btn"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Ajouter une option
+            </button>
           </div>
 
           <div class="modal-actions">
@@ -1072,7 +1141,7 @@ onMounted(fetchServices);
 }
 
 .field-modal {
-  max-width: 600px;
+  max-width: 700px;
 }
 
 .empty-selection, .no-items {
@@ -1122,11 +1191,14 @@ onMounted(fetchServices);
 
 .modal-content {
   background: white;
-  width: 100%;
+  width: 95%;
   max-width: 500px;
+  max-height: 85vh;
   border-radius: 24px;
-  padding: 2.5rem;
+  padding: 2rem;
   box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+  overflow-y: auto;
+  position: relative;
 }
 
 .modal-content h2 {
@@ -1206,6 +1278,103 @@ onMounted(fetchServices);
   cursor: pointer;
 }
 
+/* Choice Layout Improvements */
+.choices-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.field-label-main {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.choices-scroll-area {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-right: 0.5rem;
+}
+
+.choice-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #f8fafc;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+}
+
+.choice-inputs {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.choice-input {
+  padding: 0.625rem 0.875rem !important;
+  font-size: 0.9375rem !important;
+  border-radius: 10px !important;
+}
+
+.choice-input.fr {
+  background: white;
+}
+
+.choice-input.ar {
+  background: #f0f7ff;
+  border-color: #dbeafe !important;
+}
+
+.remove-btn {
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.remove-btn:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.add-choice-row-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: white;
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+  color: #64748b;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-choice-row-btn:hover {
+  border-color: #2b69ad;
+  color: #2b69ad;
+  background: #f0f7ff;
+}
+
 @media (max-width: 1024px) {
   .management-grid {
     grid-template-columns: 1fr;
@@ -1230,25 +1399,29 @@ onMounted(fetchServices);
     width: 100%;
     justify-content: flex-end;
   }
+
+  .content-list {
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .choice-inputs {
+    grid-template-columns: 1fr;
+  }
   
   .modal-content {
+    width: 100%;
     max-width: 100%;
     height: 100%;
+    max-height: 100vh;
     border-radius: 0;
     padding: 1.5rem;
   }
-  
-  .content-list {
-    max-height: 50vh;
-    overflow-y: auto;
-  }
-  
-  .content-item {
-    flex-direction: column;
+
+  .modal-overlay {
     align-items: flex-start;
-    gap: 0.75rem;
   }
-  
-  .item-main { width: 100%; }
 }
 </style>

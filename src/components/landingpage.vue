@@ -4,12 +4,14 @@ import { getApiUrl } from '../config/api';
 import Footer from './Footer.vue';
 import { useLanguage } from '../composables/useLanguage';
 
-const { t } = useLanguage();
+const { t, isAr } = useLanguage();
 
 type Service = {
   id: number;
   name: string;
+  name_ar?: string | null;
   description?: string | null;
+  description_ar?: string | null;
   image?: string | null;
   soins?: any[];
 };
@@ -27,9 +29,12 @@ const showDropdown = ref(false);
 type SoinResult = {
   soinId: number;
   soinName: string;
+  soinNameAr?: string | null;
   soinDesc: string;
+  soinDescAr?: string | null;
   serviceId: number;
   serviceName: string;
+  serviceNameAr?: string | null;
 };
 
 const allSoins = computed<SoinResult[]>(() => {
@@ -39,9 +44,12 @@ const allSoins = computed<SoinResult[]>(() => {
       results.push({
         soinId: soin.id,
         soinName: soin.name,
+        soinNameAr: soin.name_ar,
         soinDesc: soin.description || '',
+        soinDescAr: soin.description_ar || '',
         serviceId: svc.id,
         serviceName: svc.name,
+        serviceNameAr: svc.name_ar,
       });
     }
   }
@@ -53,9 +61,12 @@ const filteredSoins = computed<SoinResult[]>(() => {
   if (!q) return [];
   return allSoins.value.filter(s =>
     s.soinName.toLowerCase().includes(q) ||
+    (s.soinNameAr && s.soinNameAr.includes(q)) ||
     s.soinDesc.toLowerCase().includes(q) ||
-    s.serviceName.toLowerCase().includes(q)
-  ).slice(0, 8);
+    (s.soinDescAr && s.soinDescAr.includes(q)) ||
+    s.serviceName.toLowerCase().includes(q) ||
+    (s.serviceNameAr && s.serviceNameAr.includes(q))
+  ).slice(0, 20);
 });
 
 const selectSoin = (result: SoinResult) => {
@@ -76,7 +87,7 @@ const fetchServices = async () => {
     const headers: Record<string, string> = { accept: '*/*' };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    // Using the /services endpoint
+    // Using the /services endpoint to get nested soins for search
     const response = await fetch(getApiUrl('/services'), { headers });
 
     if (response.status === 401) {
@@ -118,6 +129,9 @@ onUnmounted(() => {
       <!-- Background Image -->
       <div class="hero-bg">
         <div class="hero-overlay"></div>
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
       </div>
       
       <div class="container hero-content">
@@ -152,8 +166,8 @@ onUnmounted(() => {
               class="search-result-item"
               @mousedown.prevent="selectSoin(result)"
             >
-              <div class="result-soin-name">{{ result.soinName }}</div>
-              <div class="result-service-name">{{ result.serviceName }}</div>
+              <div class="result-soin-name">{{ isAr && result.soinNameAr ? result.soinNameAr : result.soinName }}</div>
+              <div class="result-service-name">{{ isAr && result.serviceNameAr ? result.serviceNameAr : result.serviceName }}</div>
             </button>
           </div>
 
@@ -181,7 +195,7 @@ onUnmounted(() => {
             >
               <!-- No overlay needed without images -->
               <div class="card-content">
-                <h3>{{ service.name }}</h3>
+                <h3 :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && service.name_ar ? service.name_ar : service.name }}</h3>
                 <div class="card-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
                 </div>
@@ -264,12 +278,71 @@ onUnmounted(() => {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  animation: kenBurns 40s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes kenBurns {
+  0% { transform: scale(1) translate(0, 0); }
+  50% { transform: scale(1.1) translate(-2%, -1%); }
+  100% { transform: scale(1) translate(0, 0); }
 }
 
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.4) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 100%);
+  z-index: 2;
+}
+
+/* Floating Blobs */
+.blob {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: 1;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.blob-1 {
+  top: -100px;
+  right: -100px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, rgba(59, 130, 246, 0) 70%);
+  animation: float-1 30s infinite alternate;
+}
+
+.blob-2 {
+  bottom: -200px;
+  left: -100px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0) 70%);
+  animation: float-2 35s infinite alternate;
+}
+
+.blob-3 {
+  top: 50%;
+  left: 50%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, rgba(139, 92, 246, 0) 70%);
+  animation: float-3 40s infinite alternate;
+}
+
+@keyframes float-1 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-100px, 100px) scale(1.1); }
+}
+
+@keyframes float-2 {
+  0% { transform: translate(0, 0) scale(1.1); }
+  100% { transform: translate(150px, -50px) scale(1); }
+}
+
+@keyframes float-3 {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-20%, -30%) rotate(180deg); }
 }
 
 /* Content Layout */
@@ -359,7 +432,8 @@ onUnmounted(() => {
   border-radius: 16px;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  overflow: hidden;
+  overflow-y: auto;
+  max-height: 320px;
   z-index: 100;
   box-shadow: 0 16px 40px rgba(0,0,0,0.4);
   animation: fadeInUp 0.2s ease-out;
@@ -406,6 +480,24 @@ onUnmounted(() => {
   color: rgba(255,255,255,0.5);
   font-size: 0.9rem;
   font-family: 'Outfit', sans-serif;
+}
+
+/* Custom Scrollbar for Search Dropdown */
+.search-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.search-dropdown::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.search-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.search-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .hero-header {

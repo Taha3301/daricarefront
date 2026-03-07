@@ -6,20 +6,25 @@ import { useLanguage } from '../composables/useLanguage';
 type ChoiceField = {
   id: number;
   name: string;
+  name_ar?: string | null;
   choices: string[];
+  choices_ar?: string[] | null;
   soinId: number;
 };
 
 type TextField = {
   id: number;
   name: string;
+  name_ar?: string | null;
   soinId: number;
 };
 
 type Soin = {
   id: number;
   name: string;
+  name_ar?: string | null;
   description?: string | null;
+  description_ar?: string | null;
   price?: number;
   serviceId: number;
   checkboxes: ChoiceField[];
@@ -31,7 +36,9 @@ type Soin = {
 type Service = {
   id: number;
   name: string;
+  name_ar?: string | null;
   description?: string | null;
+  description_ar?: string | null;
   soins: Soin[];
 };
 
@@ -92,7 +99,8 @@ const formData = ref({
   patientEmail: '',
   addressComplement: '',
   latitude: null as number | null,
-  longitude: null as number | null
+  longitude: null as number | null,
+  gender: 'any' as 'any' | 'male' | 'female'
 });
 
 const addSlot = () => {
@@ -236,7 +244,9 @@ const editSoin = (soinId: number) => {
 };
 
 const getSoinName = (soinId: number) => {
-  return soins.value.find(s => s.id === soinId)?.name || 'Soin';
+  const s = soins.value.find(s => s.id === soinId);
+  if (!s) return 'Soin';
+  return isAr.value && s.name_ar ? s.name_ar : s.name;
 };
 
 const formatSoinAnswers = (soinId: number) => {
@@ -315,6 +325,7 @@ const submitRequest = async () => {
     if (formData.value.longitude !== null) fd.append('longitude', formData.value.longitude.toString());
     fd.append('isIndifferent', formData.value.isIndifferent.toString());
     fd.append('startDate', formData.value.startDate);
+    fd.append('gender', formData.value.gender);
     
     // Backend expects 'fixed' but we can send our mode, or just map '1','7'... to 'fixed'
     fd.append('durationMode', formData.value.durationMode === 'long' ? 'long' : 'fixed');
@@ -500,9 +511,9 @@ onMounted(() => {
       <div class="content">
         <header class="header">
           <button class="btn-back" @click="emit('navigate', 'landing')">{{ tx('← Retour', '→ رجوع') }}</button>
-          <div class="header-text">
-            <h1 class="title">{{ service?.name || 'Service' }}</h1>
-            <p class="subtitle">{{ service?.description || 'Choisissez un soin pour continuer.' }}</p>
+          <div class="header-text" :dir="isAr ? 'rtl' : 'ltr'">
+            <h1 class="title">{{ (isAr && service?.name_ar ? service.name_ar : service?.name) || 'Service' }}</h1>
+            <p class="subtitle">{{ (isAr && service?.description_ar ? service.description_ar : service?.description) || 'Choisissez un soin pour continuer.' }}</p>
           </div>
         </header>
 
@@ -537,8 +548,8 @@ onMounted(() => {
           <div v-if="saved.length > 0" class="saved-soins-list">
             <div v-for="savedItem in saved" :key="savedItem.soinId" class="saved-soin-item">
               <div class="saved-soin-info">
-                <div class="saved-soin-name">{{ getSoinName(savedItem.soinId) }}</div>
-                <div class="saved-soin-details">{{ formatSoinAnswers(savedItem.soinId) }}</div>
+                <div class="saved-soin-name" :dir="isAr ? 'rtl' : 'ltr'">{{ getSoinName(savedItem.soinId) }}</div>
+                <div class="saved-soin-details" :dir="isAr ? 'rtl' : 'ltr'">{{ formatSoinAnswers(savedItem.soinId) }}</div>
               </div>
               <button class="btn-modify" @click="editSoin(savedItem.soinId)">{{ tx('Modifier', 'تعديل') }}</button>
             </div>
@@ -553,14 +564,14 @@ onMounted(() => {
               @click="openSoinForm(soin.id)"
             >
               <div class="soin-header">
-                <div class="soin-name">{{ soin.name }}</div>
+                <div class="soin-name" :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && soin.name_ar ? soin.name_ar : soin.name }}</div>
                 <div v-if="isSoinSaved(soin.id)" class="soin-checkmark">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </div>
               </div>
-              <div class="soin-desc">{{ soin.description || '—' }}</div>
+              <div class="soin-desc" :dir="isAr ? 'rtl' : 'ltr'">{{ (isAr && soin.description_ar ? soin.description_ar : soin.description) || '—' }}</div>
               <div class="soin-cta">
                 <span v-if="isSoinSaved(soin.id)">{{ tx('Déjà ajouté', 'تمت الإضافة') }}</span>
                 <span v-else>{{ tx('Remplir le formulaire', 'ملء النموذج') }}</span>
@@ -742,6 +753,24 @@ onMounted(() => {
                 </div>
               </div>
             </div>
+
+            <div class="form-group mt-1">
+              <label>{{ tx('Genre du professionnel souhaité', 'جنس المختص الصحي المفضل') }}</label>
+              <div class="gender-options">
+                <label class="gender-radio">
+                  <input type="radio" value="any" v-model="formData.gender" />
+                  <span class="radio-label">{{ tx('Indifférent', 'لا يهم') }}</span>
+                </label>
+                <label class="gender-radio">
+                  <input type="radio" value="male" v-model="formData.gender" />
+                  <span class="radio-label">{{ tx('Homme', 'رجل') }}</span>
+                </label>
+                <label class="gender-radio">
+                  <input type="radio" value="female" v-model="formData.gender" />
+                  <span class="radio-label">{{ tx('Femme', 'امرأة') }}</span>
+                </label>
+              </div>
+            </div>
           </div>
 
           <div class="step-actions">
@@ -791,12 +820,12 @@ onMounted(() => {
           <div class="form-row">
             <div class="form-group">
               <label>{{ tx('Numéro de téléphone *', 'رقم الهاتف *') }}</label>
-              <input v-model="formData.patientPhone" type="tel" class="form-input" :placeholder="tx('06 00 00 00 00', '2X XXX XXX')" />
+              <input v-model="formData.patientPhone" type="tel" class="form-input" :placeholder="tx('00 000 000', '00 000 000')" />
               <p class="field-hint">{{ tx('Le professionnel vous contactera sur ce numéro pour convenir d\'un rendez-vous', 'سيتصل بك المتخصص على هذا الرقم لتحديد الموعد') }}</p>
             </div>
             <div class="form-group">
               <label>{{ tx('Confirmez le téléphone *', 'Téléphone *') }}</label>
-              <input v-model="formData.patientPhoneConfirm" type="tel" class="form-input" :placeholder="tx('06 00 00 00 00', '2X XXX XXX')" />
+              <input v-model="formData.patientPhoneConfirm" type="tel" class="form-input" :placeholder="tx('00 000 000', '00 000 000')" />
             </div>
           </div>
 
@@ -867,6 +896,13 @@ onMounted(() => {
               </div>
             </div>
             <div class="summary-item">
+              <strong>{{ tx('Préférence Genre:', 'تفضيل الجنس:') }}</strong>
+              <div class="summary-value">
+                {{ formData.gender === 'male' ? tx('Homme', 'ذكر') : 
+                   formData.gender === 'female' ? tx('Femme', 'أنثى') : tx('Indifférent', 'غير مهم') }}
+              </div>
+            </div>
+            <div class="summary-item">
               <strong>{{ tx('Patient:', 'المريض:') }}</strong>
               <div class="summary-value">
                 {{ formData.patientCivility }} {{ formData.patientFirstname }} {{ formData.patientLastname }}<br/>
@@ -934,8 +970,8 @@ onMounted(() => {
       <div class="modal">
         <div class="modal-header">
           <div>
-            <div class="modal-title">{{ activeSoin?.name }}</div>
-            <div class="modal-subtitle">{{ activeSoin?.description || tx('Renseignez les champs ci-dessous.', 'أكمل الحقول أدناه.') }}</div>
+            <div class="modal-title" :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && activeSoin?.name_ar ? activeSoin.name_ar : activeSoin?.name }}</div>
+            <div class="modal-subtitle" :dir="isAr ? 'rtl' : 'ltr'">{{ (isAr && activeSoin?.description_ar ? activeSoin.description_ar : activeSoin?.description) || tx('Renseignez les champs ci-dessous.', 'أكمل الحقول أدناه.') }}</div>
           </div>
           <button class="btn-close" @click="closeModal" aria-label="Fermer">✕</button>
         </div>
@@ -944,11 +980,11 @@ onMounted(() => {
           <!-- Checkboxes FIRST -->
           <template v-if="activeSoin?.checkboxes && activeSoin.checkboxes.length > 0">
             <div v-for="field in activeSoin.checkboxes" :key="`cb-${field.id}`" class="field">
-              <div class="field-label">{{ field.name }} <span class="badge">{{ tx('Multiple', 'متعدد') }}</span></div>
+              <div class="field-label" :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && field.name_ar ? field.name_ar : field.name }} <span class="badge">{{ tx('Multiple', 'متعدد') }}</span></div>
               <div class="choices">
-                <label v-for="choice in field.choices" :key="choice" class="pill" :class="{ active: (answers[`checkbox:${field.id}`] as string[])?.includes(choice) }">
+                <label v-for="(choice, idx) in field.choices" :key="choice" class="pill" :class="{ active: (answers[`checkbox:${field.id}`] as string[])?.includes(choice) }">
                   <input type="checkbox" class="hidden" :value="choice" v-model="answers[`checkbox:${field.id}`]" />
-                  <span>{{ choice }}</span>
+                  <span>{{ isAr && field.choices_ar?.[idx] ? field.choices_ar[idx] : choice }}</span>
                 </label>
               </div>
             </div>
@@ -957,9 +993,9 @@ onMounted(() => {
           <!-- Radios SECOND (always after checkboxes) -->
           <template v-if="activeSoin?.radios && activeSoin.radios.length > 0">
             <div v-for="field in activeSoin.radios" :key="`rd-${field.id}`" class="field">
-              <div class="field-label">{{ field.name }} <span class="badge">{{ tx('Unique', 'واحد') }}</span></div>
+              <div class="field-label" :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && field.name_ar ? field.name_ar : field.name }} <span class="badge">{{ tx('Unique', 'واحد') }}</span></div>
               <div class="choices">
-                <label v-for="choice in field.choices" :key="choice" class="pill" :class="{ active: answers[`radio:${field.id}`] === choice }">
+                <label v-for="(choice, idx) in field.choices" :key="choice" class="pill" :class="{ active: answers[`radio:${field.id}`] === choice }">
                   <input
                     type="radio"
                     class="hidden"
@@ -967,7 +1003,7 @@ onMounted(() => {
                     :value="choice"
                     v-model="answers[`radio:${field.id}`]"
                   />
-                  <span>{{ choice }}</span>
+                  <span>{{ isAr && field.choices_ar?.[idx] ? field.choices_ar[idx] : choice }}</span>
                 </label>
               </div>
             </div>
@@ -976,10 +1012,10 @@ onMounted(() => {
           <!-- Dropdowns THIRD -->
           <template v-if="activeSoin?.dropdowns && activeSoin.dropdowns.length > 0">
             <div v-for="field in activeSoin.dropdowns" :key="`dr-${field.id}`" class="field">
-              <div class="field-label">{{ field.name }} <span class="badge">{{ tx('Liste', 'قائمة') }}</span></div>
+              <div class="field-label" :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && field.name_ar ? field.name_ar : field.name }} <span class="badge">{{ tx('Liste', 'قائمة') }}</span></div>
               <select v-model="answers[`dropdown:${field.id}`]" class="select">
                 <option value="" disabled>{{ tx('Choisir…', 'اختر…') }}</option>
-                <option v-for="choice in field.choices" :key="choice" :value="choice">{{ choice }}</option>
+                <option v-for="(choice, idx) in field.choices" :key="choice" :value="choice">{{ isAr && field.choices_ar?.[idx] ? field.choices_ar[idx] : choice }}</option>
               </select>
             </div>
           </template>
@@ -987,14 +1023,14 @@ onMounted(() => {
           <!-- Texts FOURTH -->
           <template v-if="activeSoin?.texts && activeSoin.texts.length > 0">
             <div v-for="field in activeSoin.texts" :key="`tx-${field.id}`" class="field">
-              <div class="field-label">{{ field.name }} <span class="badge">{{ tx('Texte', 'نص') }}</span></div>
+              <div class="field-label" :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && field.name_ar ? field.name_ar : field.name }} <span class="badge">{{ tx('Texte', 'نص') }}</span></div>
               <input v-model="answers[`text:${field.id}`]" class="input" type="text" :placeholder="tx('Votre réponse…', 'إجابتك…')" />
             </div>
           </template>
 
           <!-- Visit Frequency Section -->
           <div class="field frequency-section">
-            <div class="field-label">{{ tx('Le professionnel doit passer *', 'يجب أن يمر المتخصص *') }}</div>
+            <div class="field-label" :dir="isAr ? 'rtl' : 'ltr'">{{ tx('Le professionnel doit passer *', 'يجب أن يمر المتخصص *') }}</div>
             <div class="frequency-options">
               <label class="radio-card" :class="{ active: answers['visitType'] === 'once' }">
                 <input type="radio" v-model="answers['visitType']" value="once" class="hidden" />
@@ -1016,7 +1052,7 @@ onMounted(() => {
             <div v-if="answers['visitType'] === 'recurring'" class="recurring-details">
               <div class="frequency-grid">
                 <div class="frequency-subgroup">
-                  <div class="mini-label">{{ tx('Nombre de passages', 'عدد الزيارات') }}</div>
+                  <div class="mini-label" :dir="isAr ? 'rtl' : 'ltr'">{{ tx('Nombre de passages', 'عدد الزيارات') }}</div>
                   <div class="pill-group">
                     <label v-for="n in ['1', '2', '3']" :key="n" class="mini-pill" :class="{ active: answers['frequencyCount'] === n }">
                       <input type="radio" v-model="answers['frequencyCount']" :value="n" class="hidden" />
@@ -1026,7 +1062,7 @@ onMounted(() => {
                 </div>
 
                 <div class="frequency-subgroup">
-                  <div class="mini-label">{{ tx('Par *', 'في كل *') }}</div>
+                  <div class="mini-label" :dir="isAr ? 'rtl' : 'ltr'">{{ tx('Par *', 'في كل *') }}</div>
                   <div class="pill-group">
                     <label v-for="p in [tx('jour','يوم'), tx('semaine','أسبوع'), tx('mois','شهر')]" :key="p" class="mini-pill" :class="{ active: answers['frequencyPeriod'] === p }">
                       <input type="radio" v-model="answers['frequencyPeriod']" :value="p" class="hidden" />
@@ -2550,6 +2586,58 @@ onMounted(() => {
   opacity: 0.9;
   margin: 0;
   font-weight: 500;
+}
+
+/* Gender Selection Styles */
+.gender-options {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.gender-radio {
+  flex: 1;
+  cursor: pointer;
+  position: relative;
+}
+
+.gender-radio input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.gender-radio .radio-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-weight: 700;
+  color: #64748b;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.gender-radio input:checked + .radio-label {
+  background: #2b69ad;
+  border-color: #2b69ad;
+  color: white;
+  box-shadow: 0 4px 12px rgba(43, 105, 173, 0.2);
+}
+
+.gender-radio:hover .radio-label {
+  border-color: #2b69ad;
+}
+
+@media (max-width: 768px) {
+  .gender-options {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 }
 </style>
 
