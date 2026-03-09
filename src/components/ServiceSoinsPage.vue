@@ -622,7 +622,7 @@ onMounted(() => {
             </button>
           </div>
           
-          <div v-if="saved.length > 0" class="step-actions">
+          <div class="step-actions">
             <button class="btn-primary" @click="nextStep">{{ tx('Continuer', 'متابعة') }}</button>
           </div>
         </div>
@@ -905,7 +905,10 @@ onMounted(() => {
             <div class="summary-item">
               <strong>{{ tx('Soins demandés:', 'الرعاية المطلوبة:') }}</strong>
               <div class="summary-value">
-                <div v-for="savedItem in saved" :key="savedItem.soinId" class="summary-soin">
+                <div v-if="saved.length === 0" class="summary-no-soin">
+                  {{ tx('Aucun soin spécifique sélectionné', 'لم يتم اختيار رعاية محددة') }}
+                </div>
+                <div v-else v-for="savedItem in saved" :key="savedItem.soinId" class="summary-soin">
                   {{ getSoinName(savedItem.soinId) }} - {{ formatSoinAnswers(savedItem.soinId) }}
                 </div>
               </div>

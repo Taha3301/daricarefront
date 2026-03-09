@@ -96,7 +96,39 @@
           <!-- Summary Step -->
           <div v-if="currentStep === 5 && !isSuccess" class="step-pane">
             <h2 class="step-title">Récapitulatif de votre demande</h2>
-            ...
+            <div class="summary-list">
+              <div class="summary-card-simple">
+                <div class="summary-item">
+                  <strong>Soins demandés:</strong>
+                  <div class="summary-val">
+                    <span v-if="formData.selectedSoins.length === 0" class="no-selection">Aucun soin spécifique sélectionné</span>
+                    <span v-else>{{ formData.selectedSoins.join(', ') }}</span>
+                  </div>
+                </div>
+                <div class="summary-item">
+                  <strong>Ordonnance:</strong> 
+                  <div class="summary-val">{{ formData.hasOrdonnance === 'oui' ? 'Oui' : 'Non' }}</div>
+                </div>
+                <div class="summary-item">
+                  <strong>Lieu:</strong>
+                  <div class="summary-val">{{ formData.address }}</div>
+                </div>
+                <div class="summary-item">
+                  <strong>Date & Heure:</strong>
+                  <div class="summary-val">{{ formData.date }} à {{ formData.time }}</div>
+                </div>
+                <div class="summary-item">
+                  <strong>Patient:</strong>
+                  <div class="summary-val">{{ formData.patientName }} ({{ formData.patientPhone }})</div>
+                </div>
+                <div class="summary-item" v-if="props.service === 'infirmiere'">
+                  <strong>Préférence genre:</strong>
+                  <div class="summary-val">
+                    {{ formData.gender === 'male' ? 'Homme' : (formData.gender === 'female' ? 'Femme' : 'Indifférent') }}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Success State -->
