@@ -846,14 +846,15 @@ onMounted(fetchServices);
 
 .service-item, .soin-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: center; /* Center vertically for a cleaner look */
+  gap: 1.5rem;
   padding: 1.25rem;
-  background: #f8fafc;
-  border-radius: 16px;
-  border: 1px solid transparent;
-  transition: all 0.2s;
+  background: white;
+  border-radius: 18px;
+  border: 1px solid #f1f5f9;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .service-item:hover, .soin-item:hover {
@@ -872,9 +873,10 @@ onMounted(fetchServices);
 
 .service-name, .soin-name {
   display: block;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 0.25rem;
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 0.375rem;
 }
 
 .service-desc, .soin-desc {
@@ -889,12 +891,17 @@ onMounted(fetchServices);
 }
 
 .service-image {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
   overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #f1f5f9;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .service-image img {

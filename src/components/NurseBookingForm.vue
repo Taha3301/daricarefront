@@ -74,48 +74,53 @@
               <label>Numéro de téléphone</label>
               <input type="tel" v-model="formData.patientPhone" placeholder="+33 6 ..." class="styled-input">
             </div>
-            <div class="form-group">
-              <label>Adresse e-mail (optionnel)</label>
-              <input type="email" v-model="formData.patientEmail" placeholder="jean.dupont@example.com" class="styled-input">
+            <div class="form-group" v-if="props.service === 'infirmiere'">
+              <label>Genre du professionnel souhaité</label>
+              <div class="radio-group">
+                <label class="radio-item mini" :class="{ active: formData.gender === 'any' }">
+                  <input type="radio" v-model="formData.gender" value="any" class="hidden-input">
+                  Indifférent
+                </label>
+                <label class="radio-item mini" :class="{ active: formData.gender === 'male' }">
+                  <input type="radio" v-model="formData.gender" value="male" class="hidden-input">
+                  Homme
+                </label>
+                <label class="radio-item mini" :class="{ active: formData.gender === 'female' }">
+                  <input type="radio" v-model="formData.gender" value="female" class="hidden-input">
+                  Femme
+                </label>
+              </div>
             </div>
           </div>
 
-          <!-- Step 5: Summary -->
-          <div v-if="currentStep === 5" class="step-pane">
+          <!-- Summary Step -->
+          <div v-if="currentStep === 5 && !isSuccess" class="step-pane">
             <h2 class="step-title">Récapitulatif de votre demande</h2>
-            <div class="summary-list">
-              <div class="summary-card-simple">
-                <div class="summary-item">
-                  <strong>Soins demandés:</strong>
-                  <div class="summary-val">
-                    <span v-if="formData.selectedSoins.length === 0" class="no-selection">Aucun soin sélectionné</span>
-                    <span v-else>{{ formData.selectedSoins.join(', ') }}</span>
-                  </div>
-                </div>
-                <div class="summary-item">
-                  <strong>Ordonnance:</strong> 
-                  <div class="summary-val">{{ formData.hasOrdonnance === 'oui' ? 'Oui' : 'Non' }}</div>
-                </div>
-                <div class="summary-item">
-                  <strong>Lieu:</strong>
-                  <div class="summary-val">{{ formData.address }}</div>
-                </div>
-                <div class="summary-item">
-                  <strong>Date & Heure:</strong>
-                  <div class="summary-val">{{ formData.date }} à {{ formData.time }}</div>
-                </div>
-                <div class="summary-item">
-                  <strong>Patient:</strong>
-                  <div class="summary-val">{{ formData.patientName }} ({{ formData.patientPhone }})</div>
-                </div>
+            ...
+          </div>
+
+          <!-- Success State -->
+          <div v-if="isSuccess" class="step-pane success-animation">
+            <div class="success-content">
+              <div class="check-container">
+                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                  <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                  <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+              </div>
+              <h2 class="step-title" style="text-align: center; margin-top: 2rem;">Demande envoyée !</h2>
+              <p style="text-align: center; color: #64748b; font-size: 1.1rem;">Merci, votre demande a été enregistrée avec succès. Un professionnel vous contactera bientôt.</p>
+              <div style="display: flex; justify-content: center; margin-top: 3rem;">
+                <button class="btn-next" @click="emit('navigate', 'landing')">Retour à l'accueil</button>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="form-footer">
-          <button class="btn-next" @click="nextStep">
-            {{ currentStep === totalSteps ? 'Confirmer la demande' : 'Continuer' }}
+        <div class="form-footer" v-if="!isSuccess">
+          <button class="btn-next btn-submit" @click="nextStep" :disabled="isSubmitting">
+            <span v-if="isSubmitting" class="spinner-mini"></span>
+            <span>{{ currentStep === totalSteps ? (isSubmitting ? 'Envoi...' : 'Confirmer la demande') : 'Continuer' }}</span>
           </button>
         </div>
       </div>
@@ -154,6 +159,8 @@ const props = defineProps({
 const emit = defineEmits(['navigate', 'submit']);
 
 const currentStep = ref(1);
+const isSubmitting = ref(false);
+const isSuccess = ref(false);
 const totalSteps = 5;
 
 const steps = [
@@ -225,20 +232,27 @@ const formData = ref({
   time: '',
   patientName: '',
   patientPhone: '',
-  patientEmail: ''
+  patientEmail: '',
+  gender: 'any'
 });
 
 const progressWidth = computed(() => `${(currentStep.value / totalSteps) * 100}%`);
 
-const nextStep = () => {
+const nextStep = async () => {
   if (currentStep.value < totalSteps) {
     currentStep.value++;
   } else {
+    isSubmitting.value = true;
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
     const finalData = {
       ...formData.value,
       serviceType: props.service
     };
     emit('submit', finalData);
+    isSubmitting.value = false;
+    isSuccess.value = true;
   }
 };
 
@@ -456,6 +470,12 @@ const prevStep = () => {
   border-color: #2b69ad;
 }
 
+.radio-item.mini {
+  padding: 1rem;
+  font-size: 1rem;
+  border-radius: 12px;
+}
+
 .form-group { margin-bottom: 2.5rem; }
 .form-group label {
   display: block;
@@ -547,5 +567,82 @@ const prevStep = () => {
   .form-layout { grid-template-columns: 1fr; }
   .stepper-sidebar { display: none; }
   .form-content-area { padding: 2rem; }
+}
+.btn-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.spinner-mini {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Success Animation */
+.success-animation {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.check-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.checkmark {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: block;
+  stroke-width: 2;
+  stroke: #69aa62;
+  stroke-miterlimit: 10;
+  box-shadow: inset 0px 0px 0px #69aa62;
+  animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+}
+
+.checkmark__circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 2;
+  stroke-miterlimit: 10;
+  stroke: #69aa62;
+  fill: none;
+  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark__check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes stroke {
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes scale {
+  0%, 100% { transform: none; }
+  50% { transform: scale3d(1.1, 1.1, 1); }
+}
+
+@keyframes fill {
+  100% { box-shadow: inset 0px 0px 0px 100px #fff; }
 }
 </style>

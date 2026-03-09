@@ -58,6 +58,7 @@ const { isAr } = useLanguage();
 const tx = (fr: string, ar: string) => isAr.value ? ar : fr;
 
 const isLoading = ref(false);
+const isSuccess = ref(false);
 const errorMsg = ref<string | null>(null);
 const services = ref<Service[]>([]);
 
@@ -262,13 +263,27 @@ const formatSoinAnswers = (soinId: number) => {
     const id = parseInt(idStr);
     if (type === 'checkbox' && Array.isArray(value) && value.length > 0) {
       const field = soin.checkboxes.find(f => f.id === id);
-      if (field) parts.push(value.join(', '));
+      if (field) {
+        const translatedChoices = value.map(v => {
+          const idx = field.choices.indexOf(v);
+          return (isAr.value && field.choices_ar?.[idx]) ? field.choices_ar[idx] : v;
+        });
+        parts.push(translatedChoices.join(', '));
+      }
     } else if (type === 'radio' && value) {
       const field = soin.radios.find(f => f.id === id);
-      if (field) parts.push(value as string);
+      if (field) {
+        const idx = field.choices.indexOf(value as string);
+        const translated = (isAr.value && field.choices_ar?.[idx]) ? field.choices_ar[idx] : value;
+        parts.push(translated as string);
+      }
     } else if (type === 'dropdown' && value) {
       const field = soin.dropdowns.find(f => f.id === id);
-      if (field) parts.push(value as string);
+      if (field) {
+        const idx = field.choices.indexOf(value as string);
+        const translated = (isAr.value && field.choices_ar?.[idx]) ? field.choices_ar[idx] : value;
+        parts.push(translated as string);
+      }
     } else if (type === 'text' && value) {
       parts.push(value as string);
     }
@@ -325,7 +340,9 @@ const submitRequest = async () => {
     if (formData.value.longitude !== null) fd.append('longitude', formData.value.longitude.toString());
     fd.append('isIndifferent', formData.value.isIndifferent.toString());
     fd.append('startDate', formData.value.startDate);
-    fd.append('gender', formData.value.gender);
+    if (formData.value.gender && formData.value.gender !== 'any') {
+      fd.append('gender', formData.value.gender);
+    }
     
     // Backend expects 'fixed' but we can send our mode, or just map '1','7'... to 'fixed'
     fd.append('durationMode', formData.value.durationMode === 'long' ? 'long' : 'fixed');
@@ -389,9 +406,9 @@ const submitRequest = async () => {
       const errorData = await res.json().catch(() => ({}));
       throw new Error(errorData.message || `Submission failed with status ${res.status}`);
     }
-
-    alert(`Votre demande de rendez-vous a été enregistrée avec succès ! \nMontant total : ${totalPrice.value} DT`);
-    emit('navigate', 'landing');
+    // Instead of alert, show success state
+    isSuccess.value = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
   } catch (err: any) {
     console.error('Submission error:', err);
@@ -519,6 +536,32 @@ onMounted(() => {
 
         <div v-if="isLoading" class="state">{{ tx('Chargement…', 'جار التحميل...') }}</div>
         
+        <!-- Success State View -->
+        <div v-else-if="isSuccess" class="success-view">
+          <div class="success-card">
+            <div class="success-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="success-svg"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            <h2 class="success-title">{{ tx('Demande envoyée !', 'تم إرسال الطلب!') }}</h2>
+            <p class="success-message">
+              {{ tx('Votre demande de rendez-vous a été enregistrée avec succès.', 'تم تسجيل طلب موعدك بنجاح.') }}
+              <br/>
+              <strong>{{ tx('Montant total estimé :', 'المبلغ الإجمالي المقدر:') }} {{ totalPrice }} DT</strong>
+            </p>
+            <div class="success-steps" :dir="isAr ? 'rtl' : 'ltr'">
+              <div class="success-step-item">
+                <div class="step-dot">1</div>
+                <div class="step-text">{{ tx('Un professionnel de santé va examiner votre demande.', 'سيقوم أخصائي صحي بمراجعة طلبك.') }}</div>
+              </div>
+              <div class="success-step-item">
+                <div class="step-dot">2</div>
+                <div class="step-text">{{ tx('Vous recevrez une notification dès qu’un professionnel l’acceptera.', 'ستتلقى إشعارًا بمجرد قبول أحد المتخصصين للطلب.') }}</div>
+              </div>
+            </div>
+            <button class="btn-primary success-btn" @click="emit('navigate', 'landing')">{{ tx('Retour à l\'accueil', 'العودة للرئيسية') }}</button>
+          </div>
+        </div>
+
         <template v-else-if="service">
           <!-- Global Error Display (Doesn't hide the form) -->
           <div v-if="errorMsg" class="state error" style="margin-bottom: 2rem; padding: 1rem; background: #fff1f2; border: 1px solid #fda4af; border-radius: 12px; color: #e11d48; font-weight: 700;">
@@ -620,8 +663,8 @@ onMounted(() => {
             <p>{{ tx('Si vous avez une ordonnance avec mention “à domicile”, l’intervention et le déplacement seront pris en charge par la sécurité sociale et votre mutuelle.', 'إذا كان لديك وصفة طبية مع إشارة "في المنزل"، سيتم تغطية التدخل والتنقل من قبل التأمين الصحي.') }}</p>
           </div>
 
-          <!-- Upload section (optional) -->
-          <div class="upload-section">
+          <!-- Upload section (optional) - Only show if not 'none' -->
+          <div v-if="formData.hasOrdonnance && formData.hasOrdonnance !== 'none'" class="upload-section">
             <h3 class="upload-title">{{ tx('Ajoutez votre ordonnance si vous l’avez à disposition (facultatif)', 'أضف وصفتك الطبية إن توفرت (اختياري)') }}</h3>
             <div class="upload-area">
               <input type="file" ref="fileInput" class="hidden" multiple accept=".jpg,.jpeg,.png,.pdf" @change="handleFiles" />
@@ -754,7 +797,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="form-group mt-1">
+            <div v-if="serviceId === 1" class="form-group mt-1">
               <label>{{ tx('Genre du professionnel souhaité', 'جنس المختص الصحي المفضل') }}</label>
               <div class="gender-options">
                 <label class="gender-radio">
@@ -895,7 +938,7 @@ onMounted(() => {
                 </div>
               </div>
             </div>
-            <div class="summary-item">
+            <div class="summary-item" v-if="serviceId === 1">
               <strong>{{ tx('Préférence Genre:', 'تفضيل الجنس:') }}</strong>
               <div class="summary-value">
                 {{ formData.gender === 'male' ? tx('Homme', 'ذكر') : 
@@ -924,8 +967,9 @@ onMounted(() => {
           </div>
           <div class="step-actions">
             <button class="btn-secondary" @click="prevStep" :disabled="isSubmitting">{{ tx('Précédent', 'السابق') }}</button>
-            <button class="btn-primary" @click="submitRequest" :disabled="isSubmitting">
-              {{ isSubmitting ? tx('Envoi en cours...', 'جار الإرسال...') : tx('Confirmer la demande', 'تأكيد الطلب') }}
+            <button class="btn-primary btn-submit" @click="submitRequest" :disabled="isSubmitting">
+              <span v-if="isSubmitting" class="spinner-mini"></span>
+              <span>{{ isSubmitting ? tx('Envoi en cours...', 'جار الإرسال...') : tx('Confirmer la demande', 'تأكيد الطلب') }}</span>
             </button>
           </div>
           <div v-if="errorMsg" class="state error mt-1">{{ errorMsg }}</div>
@@ -1131,9 +1175,124 @@ onMounted(() => {
   margin: 0;
   font-size: 2.2rem;
   font-weight: 900;
-  color: #0f172a;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  color: #1e293b;
+  letter-spacing: -1px;
+}
+
+/* Success State Styles */
+.success-view {
+  padding: 2rem 0;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.success-card {
+  background: white;
+  border-radius: 24px;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+  border: 1px solid #f1f5f9;
+}
+
+.success-icon-wrapper {
+  width: 100px;
+  height: 100px;
+  background: #f0fdf4;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 2rem;
+  color: #22c55e;
+}
+
+.success-svg {
+  animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+
+.success-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.success-message {
+  font-size: 1.1rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+}
+
+.success-steps {
+  max-width: 400px;
+  margin: 0 auto 3rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.success-step-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.step-dot {
+  width: 28px;
+  height: 28px;
+  background: #2b69ad;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.step-text {
+  font-size: 0.95rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.success-btn {
+  width: 100%;
+  max-width: 300px;
+}
+
+/* Spinner Styles */
+.btn-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.spinner-mini {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: pro-spin 0.8s linear infinite;
+}
+
+@keyframes pro-spin {
+  to { transform: rotate(360deg); }
 }
 
 .subtitle {
