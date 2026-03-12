@@ -17,6 +17,7 @@ import NurseBookingForm from './components/NurseBookingForm.vue'
 import ServiceSoinsPage from './components/ServiceSoinsPage.vue'
 import ServiceSelection from './components/ServiceSelection.vue'
 import HelpPage from './pages/HelpPage.vue'
+import AboutPage from './pages/AboutPage.vue'
 
 const { currentLang, setLang } = useLanguage();
 
@@ -134,7 +135,7 @@ const handleNewRequest = (data: any) => {
     </Transition>
 
     <Navbar
-      v-if="currentView === 'landing' || currentView === 'service-soins' || currentView === 'booking' || currentView === 'nurse-booking' || currentView === 'help'"
+      v-if="currentView === 'landing' || currentView === 'service-soins' || currentView === 'booking' || currentView === 'nurse-booking' || currentView === 'help' || currentView === 'about'"
       @navigate="(view: string, service?: string) => { currentView = view; if (service) selectedService = service; }"
     />
     
@@ -188,6 +189,7 @@ const handleNewRequest = (data: any) => {
         @submit="handleNewRequest"
       />
       <HelpPage v-else-if="currentView === 'help'" @navigate="(view: string) => currentView = view" />
+      <AboutPage v-else-if="currentView === 'about'" @navigate="(view: string) => currentView = view" />
       <Signup v-else-if="currentView === 'signup'" @navigate="(view: string) => currentView = view" />
       <ForgotPassword v-else-if="currentView === 'forgot-password'" @navigate="(view) => currentView = view" />
       <ResetPassword v-else-if="currentView === 'reset-password'" :token="resetToken" @navigate="(view) => currentView = view" />

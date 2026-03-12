@@ -123,6 +123,31 @@ const translations = {
         help_contact_phone: 'Téléphone : +216 21 918 926',
         help_contact_email: 'Email : contact@proofagency.com',
         help_contact_chat: 'Chattez avec nous',
+
+        // About Page
+        about_hero_tag: 'À propos de nous',
+        about_hero_title: 'Redéfinir le soin à domicile',
+        about_hero_subtitle: 'Daricare est né d\'une volonté simple : offrir à chaque patient des soins d\'excellence dans le confort de sa maison.',
+        about_mission_title: 'Notre Mission',
+        about_mission_desc: 'Connecter les meilleurs professionnels de santé avec les patients qui en ont le plus besoin, à travers une plateforme sécurisée, humaine et innovante.',
+        about_vision_title: 'Notre Vision',
+        about_vision_desc: 'Devenir le leader de la santé connectée au Maroc en plaçant l\'humanité et la technologie au service du bien-être de chacun.',
+        about_values_title: 'Nos Valeurs Fondamentales',
+        about_val1_title: 'Excellence',
+        about_val1_desc: 'La qualité des soins est notre exigence première et quotidienne.',
+        about_val2_title: 'Proximité',
+        about_val2_desc: 'Nous sommes physiquement et technologiquement proches de vous.',
+        about_val3_title: 'Humanité',
+        about_val3_desc: 'Derrière chaque soin, il y a un sourire et une écoute attentive.',
+
+        // How it works
+        about_how_title: 'Comment ça marche ?',
+        about_how_step1_title: 'Sélectionnez un soin',
+        about_how_step1_desc: 'Choisissez le type de soin dont vous avez besoin parmi nos nombreux services certifiés.',
+        about_how_step2_title: 'Remplissez le formulaire',
+        about_how_step2_desc: 'Précisez vos disponibilités, votre adresse et vos préférences pour une prise en charge sur mesure.',
+        about_how_step3_title: 'Validation & Intervention',
+        about_how_step3_desc: 'Un professionnel qualifié accepte votre demande et intervient chez vous selon l\'horaire convenu.',
     },
     ar: {
         // Navbar
@@ -230,6 +255,31 @@ const translations = {
         help_contact_phone: 'الهاتف: +216 21 918 926',
         help_contact_email: 'البريد الإلكتروني: contact@proofagency.com',
         help_contact_chat: 'تحدث معنا',
+
+        // About Page
+        about_hero_tag: 'من نحن',
+        about_hero_title: 'إعادة تعريف الرعاية المنزلية',
+        about_hero_subtitle: 'ولدت داري كير من رغبة بسيطة: تقديم رعاية صحية متميزة لكل مريض في راحة منزله.',
+        about_mission_title: 'مهمتنا',
+        about_mission_desc: 'ربط أفضل المتخصصين الصحيين بالمرضى الذين هم في أمس الحاجة إليهم، من خلال منصة آمنة، إنسانية ومبتكرة.',
+        about_vision_title: 'رؤيتنا',
+        about_vision_desc: 'أن نصبح الرائد في الصحة المتصلة في المغرب من خلال وضع الإنسانية والتكنولوجيا في خدمة رفاهية الجميع.',
+        about_values_title: 'قيمنا الأساسية',
+        about_val1_title: 'التميز',
+        about_val1_desc: 'جودة الرعاية هي مطلبنا الأول واليومي.',
+        about_val2_title: 'القرب',
+        about_val2_desc: 'نحن قريبون منك جسدياً وتقنياً.',
+        about_val3_title: 'الإنسانية',
+        about_val3_desc: 'خلف كل رعاية، هناك ابتسامة واستماع باهتمام.',
+
+        // How it works
+        about_how_title: 'كيف يعمل داري كير؟',
+        about_how_step1_title: 'اختر نوع الرعاية',
+        about_how_step1_desc: 'اختر نوع الخدمة التي تحتاجها من بين خدماتنا المعتمدة والمتنوعة.',
+        about_how_step2_title: 'املأ النموذج',
+        about_how_step2_desc: 'حدد مواعيدك، عنوانك وتفضيلاتك للحصول على رعاية مخصصة لك.',
+        about_how_step3_title: 'التأكيد والزيارة',
+        about_how_step3_desc: 'يقبل متخصص مؤهل طلبك ويقوم بزيارتك في منزلك في الوقت المتفق عليه.',
     },
 };
 
