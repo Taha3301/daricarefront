@@ -237,6 +237,10 @@ onMounted(fetchBookings);
               <p><strong>Adresse:</strong> {{ selectedBooking.isIndifferent ? 'Indifférent' : selectedBooking.address }}</p>
               <p v-if="selectedBooking.addressComplement"><strong>Complément:</strong> {{ selectedBooking.addressComplement }}</p>
             </div>
+            <div v-if="selectedBooking.materiel" class="info-group full-width">
+              <label>Matériel Médical</label>
+              <p>{{ selectedBooking.materiel }}</p>
+            </div>
           </div>
 
           <div class="soins-section mb-2">

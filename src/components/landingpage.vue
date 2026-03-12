@@ -185,19 +185,28 @@ onUnmounted(() => {
           
           <div v-else-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
           
-          <div v-else class="services-grid">
+          <div v-else class="services-grid" :class="{ 'is-rtl': isAr }">
             <div 
               v-for="(service, index) in sortedServices.slice(0, 6)" 
               :key="service.id" 
-              class="service-card glass compact-card"
-              :style="{ animationDelay: `${index * 100}ms` }"
+              class="service-card"
+              :style="{ 
+                animationDelay: `${index * 120}ms, ${index * 800}ms`,
+                '--float-delay': `${index * 0.7}s`,
+                '--sway-duration': `${7 + index}s`
+              }"
               @click="emit('navigate', 'service-soins', service.id)"
             >
-              <!-- No overlay needed without images -->
+              <div class="card-shimmer"></div>
               <div class="card-content">
                 <h3 :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && service.name_ar ? service.name_ar : service.name }}</h3>
                 <div class="card-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path v-if="!isAr" d="M5 12h14"></path>
+                    <path v-if="!isAr" d="M12 5l7 7-7 7"></path>
+                    <path v-if="isAr" d="M19 12H5"></path>
+                    <path v-if="isAr" d="M12 19l-7-7 7-7"></path>
+                  </svg>
                 </div>
               </div>
             </div>
@@ -545,69 +554,105 @@ onUnmounted(() => {
 }
 
 /* Glassmorphism Card */
-/* Glassmorphism Card */
 .service-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
-  animation: fadeInUp 0.8s ease-out backwards;
-  height: 80px;
-  display: flex;
   background: white;
   border: 1.5px solid #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  /* Organic Multi-Axis Animation */
+  animation: 
+    premiumFadeInUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards,
+    organicSway var(--sway-duration, 8s) ease-in-out infinite alternate;
+  animation-delay: 0s, var(--float-delay, 0s);
+  height: 85px;
+  display: flex;
+  align-items: center;
+  will-change: transform, opacity;
 }
 
 .service-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 30px -5px rgba(43, 105, 173, 0.15);
-  border-color: rgba(43, 105, 173, 0.3);
+  transform: translateY(-8px) scale(1.03) rotate(0deg) !important;
+  box-shadow: 0 25px 40px -10px rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+  z-index: 10;
 }
 
-.card-overlay-btn {
-  display: none;
+/* Premium Shimmer Effect */
+.card-shimmer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at -100% 50%,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0) 60%
+  );
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  z-index: 1;
+}
+
+.service-card:hover .card-shimmer {
+  opacity: 1;
+  background-position: 200% 50%;
+  transform: translateX(150%);
 }
 
 .card-content {
   position: relative;
   z-index: 2;
-  padding: 1.25rem 1.5rem;
+  padding: 0 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   width: 100%;
-  align-self: flex-end;
+}
+
+.is-rtl .card-content {
+  flex-direction: row-reverse;
 }
 
 .card-content h3 {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.3s ease;
+}
+
+.service-card:hover h3 {
+  color: #2563eb;
 }
 
 .card-icon {
   color: #3b82f6;
   display: flex;
-  transition: transform 0.3s ease, color 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   background: #eff6ff;
-  padding: 8px;
+  padding: 10px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .service-card:hover .card-icon {
-  transform: translateX(4px);
-  color: #3b82f6;
+  background: #3b82f6;
+  color: white;
+  transform: scale(1.1);
+}
+
+.services-grid:not(.is-rtl) .service-card:hover .card-icon {
+  transform: translateX(5px) scale(1.1);
+}
+
+.services-grid.is-rtl .service-card:hover .card-icon {
+  transform: translateX(-5px) scale(1.1);
 }
 
 /* Content Section Styles */
@@ -706,6 +751,25 @@ onUnmounted(() => {
   border-top-color: #2b69ad;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+@keyframes premiumFadeInUp {
+  0% { 
+    opacity: 0; 
+    transform: translateY(40px) scale(0.9);
+    filter: blur(15px);
+  }
+  100% { 
+    opacity: 1; 
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes organicSway {
+  0% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-8px) rotate(0.5deg); }
+  100% { transform: translateY(-4px) rotate(-0.5deg); }
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }

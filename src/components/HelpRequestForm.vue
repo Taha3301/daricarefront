@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import LegalModal from './LegalModal.vue';
+import { getApiUrl } from '../config/api';
 
 const props = defineProps<{
   initialService?: string
@@ -14,7 +16,8 @@ const formData = ref({
   serviceType: props.initialService || '',
   kineCareType: '',
   urgency: 'medium',
-  description: ''
+  description: '',
+  legalAccepted: false
 });
 
 const kineOptions = [
@@ -30,10 +33,60 @@ const kineOptions = [
   'Autres soins'
 ];
 
-const submitForm = () => {
+const isSubmitting = ref(false);
+const showLegalModal = ref(false);
+
+const onLegalAccepted = () => {
+  formData.value.legalAccepted = true;
+  showLegalModal.value = false;
+  submitForm();
+};
+
+const handleFinalSubmit = () => {
+  if (!formData.value.legalAccepted) {
+    showLegalModal.value = true;
+  } else {
+    submitForm();
+  }
+};
+
+const submitForm = async () => {
+  if (isSubmitting.value) return;
+
+  if (!formData.value.legalAccepted) {
+    alert('Veuillez accepter les conditions générales et la politique de confidentialité pour continuer.');
+    return;
+  }
+  
+  isSubmitting.value = true;
   console.log('Service request submitted:', formData.value);
-  emit('submit', formData.value);
-  emit('navigate', 'landing');
+  console.log('API URL:', getApiUrl('api/requests'));
+
+  try {
+    const response = await fetch(getApiUrl('api/requests'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData.value),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Erreur lors de l\'envoi de la demande.');
+    }
+
+    const result = await response.json();
+    console.log('Submission successful:', result);
+    alert('Votre demande a été envoyée avec succès ! Un professionnel vous contactera bientôt.');
+    emit('submit', formData.value);
+    emit('navigate', 'landing');
+  } catch (error: any) {
+    console.error('Error submitting form:', error);
+    alert(`Échec de l'envoi de la demande: ${error.message || 'Veuillez réessayer.'}`);
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 </script>
 
@@ -41,7 +94,7 @@ const submitForm = () => {
   <div class="page-wrapper">
     <div class="form-container">
       <header class="page-header">
-        <button class="btn-back" @click="emit('navigate', 'landing')">
+        <button class="btn-back" @click="$emit('navigate', 'landing')">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
           </svg>
@@ -105,9 +158,35 @@ const submitForm = () => {
           <textarea v-model="formData.description" id="description" rows="4" placeholder="Décrivez vos besoins..." class="styled-input"></textarea>
         </div>
 
-        <div class="form-action">
-          <button type="submit" class="submit-button">Envoyer la demande</button>
+        <!-- Legal Consent Checkbox (Visual hint for the modal) -->
+        <div class="legal-consent-container" @click="showLegalModal = true" style="margin-bottom: 2rem; cursor: pointer; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 12px; background: #f8fafc;">
+          <div class="checkbox-row" style="display: flex; align-items: flex-start; gap: 1rem;">
+            <div class="check-box" :class="{ 'checked': formData.legalAccepted }" style="width: 22px; height: 22px; border: 2px solid #2b69ad; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: white; transition: all 0.2s;">
+              <svg v-if="formData.legalAccepted" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2b69ad" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div class="consent-text" style="font-size: 0.95rem; color: #475569; font-weight: 600; line-height: 1.4;">
+              J’ai lu et j’accepte les Conditions Générales d’Utilisation et la Politique de Confidentialité.
+            </div>
+          </div>
+          <p v-if="!formData.legalAccepted" class="legal-hint" style="color: #ef4444; font-size: 0.8rem; margin-top: 0.5rem; margin-left: 2.3rem;">
+            Cliquer ici pour lire et accepter (requis)
+          </p>
         </div>
+
+        <div class="form-action">
+          <button type="button" @click="handleFinalSubmit" class="submit-button" :disabled="isSubmitting">
+            <span v-if="isSubmitting" class="spinner-mini"></span>
+            <span>{{ isSubmitting ? 'Envoi...' : 'Envoyer la demande' }}</span>
+          </button>
+        </div>
+
+        <!-- Legal Modal -->
+        <LegalModal 
+          :show="showLegalModal" 
+          @accept="onLegalAccepted" 
+          @close="showLegalModal = false"
+          @navigate="(v: string) => $emit('navigate', v)"
+        />
       </form>
     </div>
   </div>
@@ -248,6 +327,27 @@ textarea.styled-input {
   background: #1d4d82;
   transform: translateY(-3px);
   box-shadow: 0 20px 40px rgba(43, 105, 173, 0.2);
+}
+
+.submit-button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.spinner-mini {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 768px) {

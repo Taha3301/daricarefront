@@ -39,6 +39,7 @@ interface DetailedRequest {
   service: Service;
   acceptedProfessional: Professional;
   distance: number;
+  materiel?: string;
   allAssignments: Assignment[];
 }
 
@@ -209,6 +210,10 @@ const getStatusBadgeClass = (status: string) => {
           <div class="info-section main-info">
             <div class="service-name">{{ req.service?.name }}</div>
             <div class="total-price">{{ req.totalPrice }} DT</div>
+          </div>
+
+          <div v-if="req.materiel" class="materiel-audit-badge">
+            <strong>Matériel:</strong> {{ req.materiel }}
           </div>
 
           <div class="details-grid">
@@ -487,6 +492,16 @@ const getStatusBadgeClass = (status: string) => {
   background: #f0fdf4;
   padding: 0.25rem 1rem;
   border-radius: 12px;
+}
+
+.materiel-audit-badge {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-radius: 12px;
+  color: #92400e;
+  font-size: 0.9rem;
 }
 
 .details-grid {

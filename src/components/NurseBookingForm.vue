@@ -128,6 +128,29 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Legal Consent Checkbox (Visual hint for the modal) -->
+              <div class="legal-consent-container" @click="showLegalModal = true" style="margin-top: 2rem; cursor: pointer; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 20px; background: white;">
+                <div class="checkbox-row" style="display: flex; align-items: flex-start; gap: 1rem;">
+                  <div class="check-box" :class="{ 'checked': formData.legalAccepted }" style="width: 22px; height: 22px; border: 2px solid #2b69ad; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: white; transition: all 0.2s;">
+                    <svg v-if="formData.legalAccepted" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2b69ad" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                  <div class="consent-text" style="font-size: 0.95rem; color: #475569; font-weight: 600; line-height: 1.4;">
+                    J’ai lu et j’accepte les Conditions Générales d’Utilisation et la Politique de Confidentialité.
+                  </div>
+                </div>
+                <p v-if="!formData.legalAccepted" class="legal-hint" style="color: #ef4444; font-size: 0.8rem; margin-top: 0.5rem; margin-left: 2.3rem;">
+                  Cliquer ici pour lire et accepter (requis)
+                </p>
+              </div>
+
+              <!-- Legal Modal -->
+              <LegalModal 
+                :show="showLegalModal" 
+                @accept="onLegalAccepted" 
+                @close="showLegalModal = false"
+                @navigate="(v: string) => emit('navigate', v)"
+              />
             </div>
           </div>
 
@@ -143,14 +166,14 @@
               <h2 class="step-title" style="text-align: center; margin-top: 2rem;">Demande envoyée !</h2>
               <p style="text-align: center; color: #64748b; font-size: 1.1rem;">Merci, votre demande a été enregistrée avec succès. Un professionnel vous contactera bientôt.</p>
               <div style="display: flex; justify-content: center; margin-top: 3rem;">
-                <button class="btn-next" @click="emit('navigate', 'landing')">Retour à l'accueil</button>
+                <button class="btn-next" @click="$emit('navigate', 'landing')">Retour à l'accueil</button>
               </div>
             </div>
           </div>
         </div>
 
         <div class="form-footer" v-if="!isSuccess">
-          <button class="btn-next btn-submit" @click="nextStep" :disabled="isSubmitting">
+          <button class="btn-next btn-submit" @click="handleFinalSubmit" :disabled="isSubmitting">
             <span v-if="isSubmitting" class="spinner-mini"></span>
             <span>{{ currentStep === totalSteps ? (isSubmitting ? 'Envoi...' : 'Confirmer la demande') : 'Continuer' }}</span>
           </button>
@@ -178,21 +201,20 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
+import LegalModal from './LegalModal.vue';
 
-const props = defineProps({
-  service: {
-    type: String,
-    default: 'infirmiere'
-  }
-});
+const props = defineProps<{
+  service: string;
+}>();
 
 const emit = defineEmits(['navigate', 'submit']);
 
 const currentStep = ref(1);
 const isSubmitting = ref(false);
 const isSuccess = ref(false);
+const showLegalModal = ref(false);
 const totalSteps = 5;
 
 const steps = [
@@ -252,12 +274,10 @@ const currentSoins = computed(() => {
   return nurseSoins;
 });
 
-const defaultSoin = computed(() => currentSoins.value[0]);
-
 const step1Title = computed(() => 'De quel(s) soin(s) avez-vous besoin ?');
 
 const formData = ref({
-  selectedSoins: [],
+  selectedSoins: [] as string[],
   hasOrdonnance: 'oui',
   address: '',
   date: '',
@@ -265,10 +285,23 @@ const formData = ref({
   patientName: '',
   patientPhone: '',
   patientEmail: '',
-  gender: 'any'
+  gender: 'any',
+  legalAccepted: false
 });
 
-const progressWidth = computed(() => `${(currentStep.value / totalSteps) * 100}%`);
+const onLegalAccepted = () => {
+  formData.value.legalAccepted = true;
+  showLegalModal.value = false;
+  nextStep();
+};
+
+const handleFinalSubmit = () => {
+  if (!formData.value.legalAccepted) {
+    showLegalModal.value = true;
+  } else {
+    nextStep();
+  }
+};
 
 const nextStep = async () => {
   if (currentStep.value < totalSteps) {
@@ -285,6 +318,7 @@ const nextStep = async () => {
     emit('submit', finalData);
     isSubmitting.value = false;
     isSuccess.value = true;
+    alert('Demande envoyée avec succès !');
   }
 };
 

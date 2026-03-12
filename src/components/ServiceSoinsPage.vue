@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, nextTick } from 'vue';
 import { getApiUrl } from '../config/api';
+import LegalModal from './LegalModal.vue';
 import { useLanguage } from '../composables/useLanguage';
 
 type ChoiceField = {
@@ -77,7 +78,7 @@ const currentStep = ref(1);
 const steps = computed(() => [
   { id: 1, title: tx('Choisissez vos soin/s !', 'اختر خدماتك!') },
   { id: 2, title: tx('Avez-vous une ordonnance ?', 'هل لديك وصفة طبية؟') },
-  { id: 3, title: tx('Où et quand souhaitez-vous faire vos soins ?', 'أين ومتى تريد تلقي الرعاية؟') },
+  { id: 3, title: tx('Planification et Matériel', 'التخطيط والمعدات') },
   { id: 4, title: tx('Qui est le patient ?', 'من هو المريض؟') },
   { id: 5, title: tx('Récapitulatif de votre demande', 'ملخص طلبك') },
 ]);
@@ -98,12 +99,23 @@ const formData = ref({
   patientPhone: '',
   patientPhoneConfirm: '',
   patientEmail: '',
+  legalAccepted: false,
   addressComplement: '',
   latitude: null as number | null,
   longitude: null as number | null,
-  gender: 'any' as 'any' | 'male' | 'female'
+  gender: 'any' as 'any' | 'male' | 'female',
+  medicalEquipment: [] as string[]
 });
 
+const equipmentOptions = [
+  { name: 'Lit médicalisé', nameAr: 'سرير طبي' },
+  { name: 'Matelas anti-escarres', nameAr: 'مرتبة ضد القروح' },
+  { name: 'Concentrateur d’oxygène', nameAr: 'مكثف أوكسجين' },
+  { name: 'Fauteuil roulant', nameAr: 'كرسي متحرك' },
+  { name: 'Déambulateur', nameAr: 'مشاية' },
+  { name: 'Nébuliseur', nameAr: 'جهاز تبخير' },
+  { name: 'Pompe à perfusion', nameAr: 'مضخة محاليل' }
+];
 const addSlot = () => {
   formData.value.availabilitySlots = [{ start: '08:00', end: '10:00' }];
 };
@@ -315,6 +327,22 @@ const prevStep = () => {
 
 const isSubmitting = ref(false);
 
+const showLegalModal = ref(false);
+
+const onLegalAccepted = () => {
+  formData.value.legalAccepted = true;
+  showLegalModal.value = false;
+  submitRequest();
+};
+
+const handleFinalSubmit = () => {
+  if (!formData.value.legalAccepted) {
+    showLegalModal.value = true;
+  } else {
+    submitRequest();
+  }
+};
+
 const submitRequest = async () => {
   if (isSubmitting.value) return;
 
@@ -342,6 +370,10 @@ const submitRequest = async () => {
     fd.append('startDate', formData.value.startDate);
     if (formData.value.gender && formData.value.gender !== 'any') {
       fd.append('gender', formData.value.gender);
+    }
+
+    if (formData.value.medicalEquipment && formData.value.medicalEquipment.length > 0) {
+      fd.append('materiel', formData.value.medicalEquipment.join(', '));
     }
     
     // Backend expects 'fixed' but we can send our mode, or just map '1','7'... to 'fixed'
@@ -408,6 +440,7 @@ const submitRequest = async () => {
     }
     // Instead of alert, show success state
     isSuccess.value = true;
+    alert('Demande envoyée avec succès !');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
   } catch (err: any) {
@@ -797,6 +830,19 @@ onMounted(() => {
               </div>
             </div>
 
+            <div class="form-group mt-2">
+              <label class="field-label-pro">{{ tx('Avez-vous besoin de matériel médical ?', 'هل تحتاج إلى معدات طبية؟') }}</label>
+              <div class="equipment-grid">
+                <label v-for="eq in equipmentOptions" :key="eq.name" class="equipment-checkbox" :class="{ active: formData.medicalEquipment.includes(eq.name) }">
+                  <input type="checkbox" :value="eq.name" v-model="formData.medicalEquipment" class="hidden" />
+                  <div class="checkbox-box">
+                    <svg v-if="formData.medicalEquipment.includes(eq.name)" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                  <span>{{ tx(eq.name, eq.nameAr) }}</span>
+                </label>
+              </div>
+            </div>
+
             <div v-if="serviceId === 1" class="form-group mt-1">
               <label>{{ tx('Genre du professionnel souhaité', 'جنس المختص الصحي المفضل') }}</label>
               <div class="gender-options">
@@ -948,6 +994,15 @@ onMounted(() => {
                    formData.gender === 'female' ? tx('Femme', 'أنثى') : tx('Indifférent', 'غير مهم') }}
               </div>
             </div>
+            <div class="summary-item" v-if="formData.medicalEquipment.length > 0">
+              <strong>{{ tx('Matériel médical:', 'المعدات الطبية:') }}</strong>
+              <div class="summary-value">
+                {{ formData.medicalEquipment.map(name => {
+                  const opt = equipmentOptions.find(o => o.name === name);
+                  return opt ? tx(opt.name, opt.nameAr) : name;
+                }).join(', ') }}
+              </div>
+            </div>
             <div class="summary-item">
               <strong>{{ tx('Patient:', 'المريض:') }}</strong>
               <div class="summary-value">
@@ -968,13 +1023,37 @@ onMounted(() => {
               <p class="total-notice">{{ tx('Le paiement s\'effectue directement auprès du professionnel de santé.', 'الدفع يتم مباشرة مع المتخصص الصحي.') }}</p>
             </div>
           </div>
+
+          <!-- Legal Consent Checkbox (Visual hint for the modal) -->
+          <div class="legal-consent-container" @click="showLegalModal = true" style="margin-bottom: 2rem; cursor: pointer;">
+            <div class="checkbox-row" style="display: flex; align-items: flex-start; gap: 1rem;">
+              <div class="check-box" :class="{ 'checked': formData.legalAccepted }" style="width: 22px; height: 22px; border: 2px solid #2b69ad; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: white; transition: all 0.2s;">
+                <svg v-if="formData.legalAccepted" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2b69ad" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div class="consent-text" style="font-size: 0.95rem; color: #475569; font-weight: 600; line-height: 1.4;">
+                {{ tx('J’accepte les Conditions Générales et la Politique de Confidentialité', 'أوافق على الشروط العامة وسياسة الخصوصية') }}
+              </div>
+            </div>
+            <p v-if="!formData.legalAccepted" class="legal-hint" style="color: #ef4444; font-size: 0.8rem; margin-top: 0.5rem; margin-left: 2.3rem;">
+              {{ tx('Cliquer ici pour lire et accepter (requis)', 'انقر هنا للقراءة والموافقة (مطلوب)') }}
+            </p>
+          </div>
+
           <div class="step-actions">
             <button class="btn-secondary" @click="prevStep" :disabled="isSubmitting">{{ tx('Précédent', 'السابق') }}</button>
-            <button class="btn-primary btn-submit" @click="submitRequest" :disabled="isSubmitting">
+            <button class="btn-primary btn-submit" @click="handleFinalSubmit" :disabled="isSubmitting">
               <span v-if="isSubmitting" class="spinner-mini"></span>
               <span>{{ isSubmitting ? tx('Envoi en cours...', 'جار الإرسال...') : tx('Confirmer la demande', 'تأكيد الطلب') }}</span>
             </button>
           </div>
+
+          <!-- Legal Modal -->
+          <LegalModal 
+            :show="showLegalModal" 
+            @accept="onLegalAccepted" 
+            @close="showLegalModal = false"
+            @navigate="(v: string) => $emit('navigate', v)"
+          />
           <div v-if="errorMsg" class="state error mt-1">{{ errorMsg }}</div>
         </div>
         </template>
@@ -1842,6 +1921,66 @@ onMounted(() => {
   justify-content: center;
   font-size: 18px;
   font-weight: 900;
+}
+
+/* Equipment Grid Styles */
+.field-label-pro {
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 1rem;
+  display: block;
+  font-size: 1.1rem;
+}
+
+.equipment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.equipment-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.equipment-checkbox:hover {
+  border-color: #2b69ad;
+  background: #f0f7ff;
+}
+
+.equipment-checkbox.active {
+  background: #eff6ff;
+  border-color: #2b69ad;
+  color: #2b69ad;
+  font-weight: 700;
+}
+
+.checkbox-box {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e1;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.equipment-checkbox.active .checkbox-box {
+  background: #2b69ad;
+  border-color: #2b69ad;
+  color: white;
 }
 
 .slot-card {

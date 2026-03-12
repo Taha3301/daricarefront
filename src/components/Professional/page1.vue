@@ -1525,6 +1525,12 @@ const formatDate = (dateStr: string) => {
                     <label>Montant Total</label>
                     <span class="price-tag-large">{{ selectedRequest.totalPrice || 0 }} DT</span>
                   </div>
+                  <div v-if="selectedRequest.materiel" class="detail-item full-width mt-1">
+                    <label>🔧 Matériel Médical Requis</label>
+                    <div class="materiel-badge-pro">
+                      {{ selectedRequest.materiel }}
+                    </div>
+                  </div>
                 </div>
               </section>
 
@@ -3782,6 +3788,18 @@ const formatDate = (dateStr: string) => {
 .gender-val.male { color: #1d4ed8; background: rgba(29, 78, 216, 0.1); }
 .gender-val.female { color: #be185d; background: rgba(190, 24, 93, 0.1); }
 .gender-val.any { color: #4b5563; background: rgba(75, 85, 99, 0.1); }
+
+.materiel-badge-pro {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-radius: 12px;
+  color: #92400e;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
 
 .btn-spinner {
   width: 18px;

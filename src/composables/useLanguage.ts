@@ -23,6 +23,7 @@ const translations = {
         nav_idel: 'Professionnel de santé',
         nav_aide: 'Aide',
         nav_cta: 'Prendre rendez-vous',
+        nav_about: 'À propos Daricare',
         nav_lang_label: 'Langue',
 
         // Language Popup
@@ -129,6 +130,7 @@ const translations = {
         nav_idel: 'متخصص صحي',
         nav_aide: 'مساعدة',
         nav_cta: 'احجز موعداً',
+        nav_about: 'عن داري كير',
         nav_lang_label: 'اللغة',
 
         // Language Popup

@@ -62,6 +62,7 @@ onUnmounted(() => {
         <a href="#" class="menu-link" @click.prevent="handleNavigate('landing')">{{ t.nav_patient }}</a>
         <a href="#" class="menu-link" @click.prevent="handleNavigate('login')">{{ t.nav_idel }}</a>
         <a href="#" class="menu-link" @click.prevent="handleNavigate('help')">{{ t.nav_aide }}</a>
+        <a href="#" class="menu-link" @click.prevent="handleNavigate('about')">{{ t.nav_about }}</a>
         
         <!-- Mobile-only CTA -->
         <div class="mobile-cta">
@@ -417,24 +418,30 @@ onUnmounted(() => {
   }
 
   .navbar-menu {
-    position: fixed;
-    top: 0;
-    right: -100%;
-    width: 300px;
-    height: 100vh;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
     background: white;
     flex-direction: column;
-    padding: 6rem 2rem 2rem;
+    padding: 2rem;
     gap: 1.5rem;
-    transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: -10px 0 30px rgba(0,0,0,0.05);
+    transform: translateY(-20px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     z-index: 1000;
-    align-items: flex-start;
+    align-items: center;
+    border-top: 1px solid #f1f5f9;
   }
 
-
   .navbar-menu.is-open {
-    right: 0;
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
   }
 
   .navbar-actions {
@@ -444,10 +451,8 @@ onUnmounted(() => {
   .mobile-cta {
     display: block;
     width: 100%;
-    position: absolute;
-    bottom: 2rem;
-    left: 0;
-    padding: 0 2rem;
+    margin-top: 1rem;
+    padding: 0;
   }
 
   .btn-cta-mobile {
