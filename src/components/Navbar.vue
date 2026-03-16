@@ -63,6 +63,7 @@ onUnmounted(() => {
         <a href="#" class="menu-link" @click.prevent="handleNavigate('login')">{{ t.nav_idel }}</a>
         <a href="#" class="menu-link" @click.prevent="handleNavigate('help')">{{ t.nav_aide }}</a>
         <a href="#" class="menu-link" @click.prevent="handleNavigate('about')">{{ t.nav_about }}</a>
+        <a href="#" class="menu-link" @click.prevent="handleNavigate('avis')">{{ t.nav_avis }}</a>
         
         <!-- Mobile-only CTA -->
         <div class="mobile-cta">
@@ -70,12 +71,22 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Right Actions -->
+      <!-- Right Actions (Desktop Only) -->
       <div class="navbar-actions">
+        <button class="btn-cta" @click="handleNavigate('service-selection')">
+          {{ t.nav_cta }}
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Language & Hamburger Group -->
+      <div class="navbar-controls">
         <!-- Language Switcher -->
         <div class="lang-switcher" @click.stop>
           <button class="btn-lang" @click="toggleLangMenu" :title="t.nav_lang_label">
-            <!-- Globe Icon -->
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <line x1="2" y1="12" x2="22" y2="12"/>
@@ -109,21 +120,13 @@ onUnmounted(() => {
           </Transition>
         </div>
 
-        <button class="btn-cta" @click="handleNavigate('service-selection')">
-          {{ t.nav_cta }}
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"/>
-            <polyline points="12 5 19 12 12 19"/>
-          </svg>
+        <!-- Hamburger Menu Toggle -->
+        <button class="hamburger" @click="toggleMenu" :class="{ 'is-active': isMenuOpen }" aria-label="Menu">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
         </button>
       </div>
-
-      <!-- Hamburger Menu Toggle -->
-      <button class="hamburger" @click="toggleMenu" :class="{ 'is-active': isMenuOpen }" aria-label="Menu">
-        <span class="bar"></span>
-        <span class="bar"></span>
-        <span class="bar"></span>
-      </button>
     </div>
     
     <!-- Dark overlay for mobile menu -->
@@ -232,6 +235,13 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.navbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  z-index: 1001;
 }
 
 /* ── Language Switcher ── */
@@ -446,6 +456,15 @@ onUnmounted(() => {
 
   .navbar-actions {
     display: none;
+  }
+
+  .navbar-controls {
+    gap: 0.75rem;
+  }
+
+  .btn-lang {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
   }
 
   .mobile-cta {

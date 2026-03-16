@@ -87,8 +87,8 @@ const fetchServices = async () => {
     const headers: Record<string, string> = { accept: '*/*' };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    // Using the /services endpoint to get nested soins for search
-    const response = await fetch(getApiUrl('/services'), { headers });
+    // Using the /services/only endpoint to get services with images
+    const response = await fetch(getApiUrl('/services/only'), { headers });
 
     if (response.status === 401) {
       console.warn('Unauthorized. Redirecting to login.');
@@ -110,7 +110,10 @@ const fetchServices = async () => {
 };
 
 const sortedServices = computed(() => {
-  return [...services.value].sort((a, b) => a.id - b.id);
+  const last = new Set([2, 3]);
+  const normal = services.value.filter(s => !last.has(s.id)).sort((a, b) => a.id - b.id);
+  const deferred = services.value.filter(s => last.has(s.id)).sort((a, b) => a.id - b.id);
+  return [...normal, ...deferred];
 });
 
 onMounted(() => {
@@ -191,15 +194,22 @@ onUnmounted(() => {
               :key="service.id" 
               class="service-card"
               :style="{ 
-                animationDelay: `${index * 120}ms, ${index * 800}ms`,
+                animationDelay: `${index * 120}ms`,
                 '--float-delay': `${index * 0.7}s`,
                 '--sway-duration': `${7 + index}s`
               }"
               @click="emit('navigate', 'service-soins', service.id)"
             >
+              <div class="card-image" :style="{ backgroundImage: service.image ? `url('${service.image}')` : 'none' }"></div>
               <div class="card-shimmer"></div>
+              <div class="card-overlay"></div>
               <div class="card-content">
-                <h3 :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && service.name_ar ? service.name_ar : service.name }}</h3>
+                <div class="card-text">
+                  <h3 :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && service.name_ar ? service.name_ar : service.name }}</h3>
+                  <p v-if="service.description" class="service-teaser">
+                    {{ isAr && service.description_ar ? service.description_ar : service.description }}
+                  </p>
+                </div>
                 <div class="card-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path v-if="!isAr" d="M5 12h14"></path>
@@ -272,10 +282,10 @@ onUnmounted(() => {
   min-height: 100vh;
   width: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   overflow: hidden;
-  padding-bottom: 4rem;
+  padding: 0 0 2rem;
 }
 
 /* Background Image */
@@ -362,11 +372,11 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3rem;
+  gap: 1.25rem;
   width: 100%;
   max-width: 1400px;
   padding: 0 2rem;
-  padding-top: 4rem; /* Moved up ~2cm */
+  padding-top: 6rem;
 }
 
 /* ── Search Bar ── */
@@ -515,12 +525,12 @@ onUnmounted(() => {
 }
 
 .hero-title {
-  font-size: 3.5rem;
+  font-size: 3.2rem;
   font-weight: 800;
   color: #1e293b;
   letter-spacing: -0.03em;
-  line-height: 1.1;
-  margin-bottom: 0.5rem;
+  line-height: 1;
+  margin-bottom: 0.15rem;
   text-shadow: 0 2px 10px rgba(255,255,255,0.5);
 }
 
@@ -532,7 +542,7 @@ onUnmounted(() => {
 }
 
 .hero-subtitle {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #475569;
   font-weight: 600;
   text-shadow: 0 1px 4px rgba(255,255,255,0.3);
@@ -547,10 +557,10 @@ onUnmounted(() => {
 
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
   width: 100%;
-  max-width: 800px;
+  max-width: 1200px;
 }
 
 /* Glassmorphism Card */
@@ -568,17 +578,60 @@ onUnmounted(() => {
     premiumFadeInUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards,
     organicSway var(--sway-duration, 8s) ease-in-out infinite alternate;
   animation-delay: 0s, var(--float-delay, 0s);
-  height: 85px;
+  height: 200px;
   display: flex;
-  align-items: center;
+  align-items: flex-end; /* Align content to bottom */
   will-change: transform, opacity;
+}
+
+.card-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+
+.service-card:hover .card-image {
+  transform: scale(1.1);
 }
 
 .service-card:hover {
   transform: translateY(-8px) scale(1.03) rotate(0deg) !important;
-  box-shadow: 0 25px 40px -10px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 25px 40px -10px rgba(59, 130, 246, 0.25);
   border-color: #3b82f6;
   z-index: 10;
+}
+
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(15, 23, 42, 0.6) 50%,
+    rgba(15, 23, 42, 0) 100%
+  );
+  z-index: 1;
+  transition: all 0.5s ease;
+}
+
+.is-rtl .card-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(15, 23, 42, 0.6) 50%,
+    rgba(15, 23, 42, 0) 100%
+  );
+}
+
+.service-card:hover .card-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(37, 99, 235, 0.9) 0%,
+    rgba(29, 78, 216, 0.4) 100%
+  );
 }
 
 /* Premium Shimmer Effect */
@@ -601,12 +654,19 @@ onUnmounted(() => {
   transform: translateX(150%);
 }
 
+/* Removing the small icon style as we are using full background images */
+
+
+.service-card:hover .service-img {
+  transform: scale(1.1);
+}
+
 .card-content {
   position: relative;
   z-index: 2;
-  padding: 0 1.5rem;
+  padding: 1.5rem;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
   width: 100%;
@@ -616,19 +676,40 @@ onUnmounted(() => {
   flex-direction: row-reverse;
 }
 
+.card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow: hidden;
+}
+
 .card-content h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.service-teaser {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
 }
 
 .service-card:hover h3 {
-  color: #2563eb;
+  color: white;
 }
 
 .card-icon {

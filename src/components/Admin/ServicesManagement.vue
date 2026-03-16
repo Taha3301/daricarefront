@@ -64,7 +64,7 @@ const fetchServices = async () => {
   const token = localStorage.getItem('access_token');
   try {
     isLoading.value = true;
-    const response = await fetch(getApiUrl('/services'), {
+    const response = await fetch(getApiUrl('/services/only'), {
       headers: { 
         'accept': '*/*',
         'Authorization': `Bearer ${token}` 
@@ -435,7 +435,7 @@ onMounted(fetchServices);
             @click="selectService(service)"
           >
             <div class="service-image" v-if="service.image">
-              <img :src="getApiUrl(service.image)" :alt="service.name" />
+              <img :src="service.image" :alt="service.name" />
             </div>
             <div class="service-info">
               <span class="service-name">{{ service.name }}</span>
@@ -896,7 +896,7 @@ onMounted(fetchServices);
   border-radius: 14px;
   overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid #f1f5f9;
+  border: 1.5px solid #f1f5f9;
   background: #f8fafc;
   display: flex;
   align-items: center;

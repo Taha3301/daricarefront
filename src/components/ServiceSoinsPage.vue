@@ -73,6 +73,66 @@ const activeSoinId = ref<number | null>(null);
 const answers = ref<Record<FieldKey, string | string[]>>({} as any);
 
 const saved = ref<Array<{ soinId: number; answers: Record<FieldKey, string | string[]> }>>([]);
+const placeSuggestions = ref<any[]>([]);
+const isSearchingPlaces = ref(false);
+const activeSearchField = ref<string | null>(null);
+let debounceTimeout: any = null;
+
+const fetchPlaces = (query: string, fieldId: number) => {
+  if (debounceTimeout) clearTimeout(debounceTimeout);
+  
+  const q = (query || '').trim();
+  if (q.length < 2) {
+    placeSuggestions.value = [];
+    isSearchingPlaces.value = false;
+    return;
+  }
+
+  isSearchingPlaces.value = true;
+  activeSearchField.value = `text:${fieldId}`;
+
+  debounceTimeout = setTimeout(async () => {
+    try {
+      // Photon API restricted to Tunisia bbox
+      const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&bbox=7.5,30.2,11.6,37.6&limit=6`);
+      const data = await res.json();
+      placeSuggestions.value = data.features || [];
+    } catch (err) {
+      console.error('Failed to fetch places:', err);
+    } finally {
+      isSearchingPlaces.value = false;
+    }
+  }, 400); // 400ms debounce
+};
+
+const selectPlace = (place: any, fieldId: number) => {
+  const props = place.properties;
+  const parts = [];
+  if (props.name) parts.push(props.name);
+  if (props.street) parts.push(props.street);
+  if (props.city) parts.push(props.city);
+  else if (props.state) parts.push(props.state);
+  
+  const fullAddress = parts.join(', ');
+  answers.value[`text:${fieldId}`] = fullAddress;
+  placeSuggestions.value = [];
+  activeSearchField.value = null;
+};
+
+// Close autocomplete on blur with delay to allow selection click
+const closeAutocomplete = () => {
+  setTimeout(() => {
+    placeSuggestions.value = [];
+    activeSearchField.value = null;
+  }, 200);
+};
+
+const isAmbulanceField = (fieldName: string) => {
+  const lower = (fieldName || '').toLowerCase();
+  return lower.includes('départ') || lower.includes('depart') ||
+         lower.includes('arrivée') || lower.includes('arrivee') ||
+         lower.includes('destination') || lower.includes('transport');
+};
 
 const currentStep = ref(1);
 const steps = computed(() => [
@@ -591,6 +651,18 @@ onMounted(() => {
                 <div class="step-text">{{ tx('Vous recevrez une notification dès qu’un professionnel l’acceptera.', 'ستتلقى إشعارًا بمجرد قبول أحد المتخصصين للطلب.') }}</div>
               </div>
             </div>
+
+            <!-- Payment Alert -->
+            <div class="payment-alert" :dir="isAr ? 'rtl' : 'ltr'">
+              <div class="payment-alert-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div class="payment-alert-body">
+                <div class="payment-alert-title">{{ tx('Paiement requis avant la prestation', 'الدفع مطلوب قبل تنفيذ الخدمة') }}</div>
+                <div class="payment-alert-text">{{ tx('Veuillez noter que le paiement doit être effectué avant que le professionnel de santé intervienne. Aucune prestation ne sera réalisée sans règlement préalable. Le professionnel apporte toujours son propre matériel.', 'يرجى العلم أن الدفع يجب أن يتم قبل أن يقوم المختص الصحي بتقديم الخدمة. لن يتم تنفيذ أي خدمة دون دفع مسبق. يقوم المتخصص دائمًا بإحضار معداته الخاصة.') }}</div>
+              </div>
+            </div>
+
             <button class="btn-primary success-btn" @click="emit('navigate', 'landing')">{{ tx('Retour à l\'accueil', 'العودة للرئيسية') }}</button>
           </div>
         </div>
@@ -830,18 +902,6 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="form-group mt-2">
-              <label class="field-label-pro">{{ tx('Avez-vous besoin de matériel médical ?', 'هل تحتاج إلى معدات طبية؟') }}</label>
-              <div class="equipment-grid">
-                <label v-for="eq in equipmentOptions" :key="eq.name" class="equipment-checkbox" :class="{ active: formData.medicalEquipment.includes(eq.name) }">
-                  <input type="checkbox" :value="eq.name" v-model="formData.medicalEquipment" class="hidden" />
-                  <div class="checkbox-box">
-                    <svg v-if="formData.medicalEquipment.includes(eq.name)" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  </div>
-                  <span>{{ tx(eq.name, eq.nameAr) }}</span>
-                </label>
-              </div>
-            </div>
 
             <div v-if="serviceId === 1" class="form-group mt-1">
               <label>{{ tx('Genre du professionnel souhaité', 'جنس المختص الصحي المفضل') }}</label>
@@ -1148,9 +1208,43 @@ onMounted(() => {
 
           <!-- Texts FOURTH -->
           <template v-if="activeSoin?.texts && activeSoin.texts.length > 0">
-            <div v-for="field in activeSoin.texts" :key="`tx-${field.id}`" class="field">
+            <div v-for="field in activeSoin.texts" :key="`tx-${field.id}`" 
+                 class="field autocomplete-wrapper" 
+                 :class="{ 'searching-active': activeSearchField === `text:${field.id}` }">
               <div class="field-label" :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && field.name_ar ? field.name_ar : field.name }} <span class="badge">{{ tx('Texte', 'نص') }}</span></div>
-              <input v-model="answers[`text:${field.id}`]" class="input" type="text" :placeholder="tx('Votre réponse…', 'إجابتك…')" />
+              
+              <!-- Check if it's Ambulance Departure/Arrival -->
+              <template v-if="props.serviceId === 3 && isAmbulanceField(field.name)">
+                <div class="input-with-loader">
+                  <input 
+                    v-model="answers[`text:${field.id}`]" 
+                    class="input" 
+                    type="text" 
+                    :placeholder="tx('Chercher un lieu…', 'البحث عن مكان…')"
+                    @input="(e: any) => fetchPlaces(e.target.value, field.id)"
+                    @focus="(e: any) => fetchPlaces(e.target.value, field.id)"
+                    @blur="closeAutocomplete"
+                  />
+                  <div v-if="isSearchingPlaces && activeSearchField === `text:${field.id}`" class="mini-loader"></div>
+                </div>
+                <div v-if="placeSuggestions.length > 0 && activeSearchField === `text:${field.id}`" class="autocomplete-results">
+                  <div 
+                    v-for="place in placeSuggestions" 
+                    :key="place.properties.osm_id" 
+                    class="result-item"
+                    @mousedown.prevent="selectPlace(place, field.id)"
+                  >
+                    <div class="place-name">{{ place.properties.name }}</div>
+                    <div class="place-details">
+                      {{ place.properties.street ? place.properties.street + ', ' : '' }}
+                      {{ place.properties.city || place.properties.state || '' }}
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <input v-model="answers[`text:${field.id}`]" class="input" type="text" :placeholder="tx('Votre réponse…', 'إجابتك…')" />
+              </template>
             </div>
           </template>
 
@@ -1158,15 +1252,15 @@ onMounted(() => {
           <div class="field frequency-section">
             <div class="field-label" :dir="isAr ? 'rtl' : 'ltr'">{{ tx('Le professionnel doit passer *', 'يجب أن يمر المتخصص *') }}</div>
             <div class="frequency-options">
-              <label class="radio-card" :class="{ active: answers['visitType'] === 'once' }">
-                <input type="radio" v-model="answers['visitType']" value="once" class="hidden" />
+              <label class="radio-card" :class="{ active: answers['visitType'] === 'once', 'fixed-active': props.serviceId === 3 }">
+                <input type="radio" v-model="answers['visitType']" value="once" class="hidden" :disabled="props.serviceId === 3" />
                 <div class="radio-content">
                   <div class="radio-circle"></div>
                   <span>{{ tx('Une seule fois', 'مرة واحدة') }}</span>
                 </div>
               </label>
 
-              <label class="radio-card" :class="{ active: answers['visitType'] === 'recurring' }">
+              <label v-if="props.serviceId !== 3" class="radio-card" :class="{ active: answers['visitType'] === 'recurring' }">
                 <input type="radio" v-model="answers['visitType']" value="recurring" class="hidden" />
                 <div class="radio-content">
                   <div class="radio-circle"></div>
@@ -1520,11 +1614,12 @@ onMounted(() => {
   background: white;
   border-radius: 24px;
   border: 1px solid #e2e8f0;
-  overflow: hidden;
+  /* overflow: hidden; */ /* Removed to allow autocomplete dropdowns to overflow */
   box-shadow: 0 40px 100px rgba(15, 23, 42, 0.2);
   display: flex;
   flex-direction: column;
   max-height: 90vh;
+  position: relative;
 }
 
 .modal-header {
@@ -1561,6 +1656,7 @@ onMounted(() => {
 
 .modal-body {
   padding: 1.5rem;
+  padding-bottom: 200px; /* Add space for autocomplete results at the bottom */
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -2556,6 +2652,234 @@ onMounted(() => {
   cursor: pointer;
 }
 
+.btn-primary:hover {
+  background: #1d4d82;
+  border-color: #1d4d82;
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Visit Frequency Section */
+.frequency-section {
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  border: 1px solid #e2e8f0;
+}
+
+.frequency-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.radio-card {
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.radio-card:hover:not(.fixed-active) {
+  border-color: #2b69ad;
+  background: #f8fafc;
+}
+
+.radio-card.active {
+  background: #f0f7ff;
+  border-color: #2b69ad;
+}
+
+.radio-card.fixed-active {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  cursor: default;
+  opacity: 0.8;
+}
+
+.radio-card.fixed-active .radio-circle {
+  background: #94a3b8;
+  border-color: #94a3b8;
+}
+
+.radio-card.fixed-active .radio-circle::after {
+  content: '✓';
+  color: white;
+  font-size: 12px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: none;
+}
+
+.radio-card.fixed-active span {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.radio-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 800;
+  color: #334155;
+}
+
+.active .radio-content {
+  color: #2b69ad;
+}
+
+.recurring-details {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.frequency-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.mini-pill.active {
+  background: #2b69ad;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1d4d82;
+  border-color: #1d4d82;
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Visit Frequency Section */
+.frequency-section {
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  border: 1px solid #e2e8f0;
+}
+
+.frequency-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.radio-card {
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.radio-card:hover:not(.fixed-active) {
+  border-color: #2b69ad;
+  background: #f8fafc;
+}
+
+.radio-card.active {
+  background: #f0f7ff;
+  border-color: #2b69ad;
+}
+
+.radio-card.fixed-active {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  cursor: default;
+  opacity: 0.8;
+}
+
+.radio-card.fixed-active .radio-circle {
+  background: #94a3b8;
+  border-color: #94a3b8;
+}
+
+.radio-card.fixed-active .radio-circle::after {
+  content: '✓';
+  color: white;
+  font-size: 12px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: none;
+}
+
+.radio-card.fixed-active span {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.radio-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 800;
+  color: #334155;
+}
+
+.active .radio-content {
+  color: #2b69ad;
+}
+
+.recurring-details {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.frequency-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.mini-pill.active {
+  background: #2b69ad;
+  color: white;
+}
+
 .btn-primary {
   background: #2b69ad;
   border: 1px solid #2b69ad;
@@ -2939,6 +3263,124 @@ onMounted(() => {
     flex-direction: column;
     gap: 0.5rem;
   }
+}
+
+/* ── Payment Alert ── */
+.payment-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  background: #fffbeb;
+  border: 1.5px solid #f59e0b;
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0 0.5rem;
+  text-align: left;
+}
+
+.payment-alert[dir="rtl"] {
+  text-align: right;
+}
+
+.payment-alert strong {
+  color: #92400e;
+}
+
+.autocomplete-wrapper {
+  position: relative;
+  z-index: 10;
+}
+
+.autocomplete-wrapper.searching-active {
+  z-index: 1000; /* Ensure active search field is on top of following fields */
+}
+
+.autocomplete-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  margin-top: 6px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  z-index: 10000; /* Higher than modal content */
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.input-with-loader {
+  position: relative;
+  width: 100%;
+}
+
+.mini-loader {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: translateY(-50%) rotate(0deg); }
+  100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+.result-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.result-item:hover {
+  background: #f8fafc;
+}
+
+.place-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.place-details {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.payment-alert-icon {
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.payment-alert-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.payment-alert-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #92400e;
+}
+
+.payment-alert-text {
+  font-size: 0.85rem;
+  color: #78350f;
+  line-height: 1.5;
 }
 </style>
 

@@ -25,6 +25,7 @@ const translations = {
         nav_cta: 'Prendre rendez-vous',
         nav_about: 'À propos Daricare',
         nav_lang_label: 'Langue',
+        nav_avis: 'Avis',
 
         // Language Popup
         popup_title: 'Choisissez votre langue',
@@ -148,6 +149,25 @@ const translations = {
         about_how_step2_desc: 'Précisez vos disponibilités, votre adresse et vos préférences pour une prise en charge sur mesure.',
         about_how_step3_title: 'Validation & Intervention',
         about_how_step3_desc: 'Un professionnel qualifié accepte votre demande et intervient chez vous selon l\'horaire convenu.',
+
+        // Avis Page
+        avis_title: 'Votre avis compte',
+        avis_subtitle: 'Partagez votre expérience avec Daricare pour nous aider à nous améliorer.',
+        avis_label_title: 'Titre de l\'avis',
+        avis_label_rating: 'Note globale',
+        avis_label_comment: 'Votre commentaire',
+        avis_label_phone: 'Numéro de téléphone',
+        avis_label_recommend: 'Recommanderiez-vous Daricare à vos proches ?',
+        avis_placeholder_title: 'Ex: Excellent service !',
+        avis_placeholder_comment: 'Dites-nous ce que vous avez particulièrement apprécié...',
+        avis_placeholder_phone: 'Ex: 0123456789',
+        avis_btn_submit: 'Publier mon avis',
+        avis_loading: 'Envoi en cours...',
+        avis_success: 'Merci ! Votre avis a été enregistré et sera publié après validation.',
+        avis_error_no_request: 'Vous devez avoir déjà effectué une demande de soin pour pouvoir laisser un avis.',
+        avis_error_generic: 'Une erreur est survenue lors de l\'envoi de votre avis.',
+        avis_recommend_yes: 'Oui, absolument',
+        avis_recommend_no: 'Pas encore',
     },
     ar: {
         // Navbar
@@ -157,6 +177,7 @@ const translations = {
         nav_cta: 'احجز موعداً',
         nav_about: 'عن داري كير',
         nav_lang_label: 'اللغة',
+        nav_avis: 'الآراء',
 
         // Language Popup
         popup_title: 'اختر لغتك',
@@ -280,6 +301,25 @@ const translations = {
         about_how_step2_desc: 'حدد مواعيدك، عنوانك وتفضيلاتك للحصول على رعاية مخصصة لك.',
         about_how_step3_title: 'التأكيد والزيارة',
         about_how_step3_desc: 'يقبل متخصص مؤهل طلبك ويقوم بزيارتك في منزلك في الوقت المتفق عليه.',
+
+        // Avis Page
+        avis_title: 'رأيكم يهمنا',
+        avis_subtitle: 'شاركنا تجربتك مع داري كير لمساعدتنا على تقديم الأفضل.',
+        avis_label_title: 'عنوان التقييم',
+        avis_label_rating: 'التقييم العام',
+        avis_label_comment: 'تعليقك',
+        avis_label_phone: 'رقم الهاتف',
+        avis_label_recommend: 'هل تنصح بداري كير لأقاربك؟',
+        avis_placeholder_title: 'مثال: خدمة ممتازة !',
+        avis_placeholder_comment: 'أخبرنا عما أعجبك بشكل خاص...',
+        avis_placeholder_phone: 'مثال: 0123456789',
+        avis_btn_submit: 'نشر تقييمي',
+        avis_loading: 'جاري الإرسال...',
+        avis_success: 'شكراً لك! تم تسجيل تقييمك وسيتم نشره بعد المراجعة.',
+        avis_error_no_request: 'يجب أن تكون قد قمت بطلب رعاية من قبل لتتمكن من ترك تقييم.',
+        avis_error_generic: 'حدث خطأ أثناء إرسال تقييمك.',
+        avis_recommend_yes: 'نعم، بالتأكيد',
+        avis_recommend_no: 'ليس بعد',
     },
 };
 

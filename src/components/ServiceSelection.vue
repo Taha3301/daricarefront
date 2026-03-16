@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { getApiUrl, getUploadUrl } from '../config/api';
+import { getApiUrl } from '../config/api';
 import { useLanguage } from '../composables/useLanguage';
 const { t, isAr } = useLanguage();
 
@@ -105,19 +105,26 @@ onMounted(fetchServices);
       </div>
 
       <!-- Services grid -->
-      <div v-else class="services-list">
+      <div 
+        v-else 
+        class="services-list" 
+        :style="{ '--total-count': services.length }"
+      >
         <button
           v-for="(service, index) in services"
           :key="service.id"
           class="service-item"
           :style="{
-            animationDelay: `${index * 80}ms`,
-            backgroundImage: service.image
-              ? `url('${getUploadUrl(service.image)}')`
-              : 'none'
+            animationDelay: `${index * 80}ms`
           }"
           @click="selectService(service.id)"
         >
+          <!-- Card Image for Zoom Effect -->
+          <div class="card-image" :style="{ backgroundImage: service.image ? `url('${service.image}')` : 'none' }"></div>
+
+          <!-- Card Index Counter (CSS-based) -->
+          <div class="card-counter"></div>
+
           <!-- Overlay -->
           <div class="card-overlay"></div>
 
@@ -271,58 +278,96 @@ onMounted(fetchServices);
   margin: 0;
 }
 
-/* ── Services Grid ── */
+/* ── Services Grid/Slider ── */
 .services-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  gap: 1.25rem;
+  counter-reset: service-counter;
+  transition: all 0.4s ease;
 }
 
 .service-item {
   display: flex;
   flex-direction: row;
-  align-items: center;
-  gap: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 16px;
-  padding: 2rem 1.75rem;
-  min-height: 120px;
+  align-items: flex-end; /* Align content to bottom */
+  gap: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  padding: 1.5rem 1.75rem;
+  height: 180px;
   cursor: pointer;
   text-align: left;
   width: 100%;
   font-family: 'Outfit', sans-serif;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   animation: fadeInUp 0.5s ease-out backwards;
   position: relative;
   overflow: hidden;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: rgba(15, 30, 60, 0.7);
+  counter-increment: service-counter;
 }
 
-/* Dark gradient overlay on top of the bg image */
+.card-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+
+.service-item:hover .card-image {
+  transform: scale(1.1);
+}
+
+/* ── Card Counter ── */
+.card-counter {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+}
+
+.card-counter::after {
+  content: counter(service-counter) " / " var(--total-count);
+}
+
+.lang-ar .card-counter {
+  right: auto;
+  left: 1.25rem;
+}
+
+/* Dark gradient overlay on top of the bg image to ensure readability */
 .card-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    90deg,
-    rgba(5, 15, 40, 0.45) 0%,
-    rgba(5, 15, 40, 0.25) 60%,
-    rgba(5, 15, 40, 0.10) 100%
+    to top,
+    rgba(5, 15, 35, 0.95) 0%,
+    rgba(5, 15, 35, 0.5) 50%,
+    rgba(5, 15, 35, 0.1) 100%
   );
-  transition: background 0.35s ease;
-  z-index: 0;
+  transition: all 0.4s ease;
+  z-index: 1;
 }
 
 .service-item:hover .card-overlay {
   background: linear-gradient(
-    90deg,
-    rgba(30, 60, 120, 0.75) 0%,
-    rgba(20, 50, 110, 0.55) 60%,
-    rgba(10, 30, 80, 0.35) 100%
+    to top,
+    rgba(37, 99, 235, 0.9) 0%,
+    rgba(37, 99, 235, 0.6) 50%,
+    rgba(37, 99, 235, 0.2) 100%
   );
 }
 
@@ -353,19 +398,24 @@ onMounted(fetchServices);
 }
 
 .item-name {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 800;
   color: #ffffff;
-  line-height: 1.3;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  line-height: 1.2;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
 
 .item-desc {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.65);
-  font-weight: 400;
-  line-height: 1.35;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  line-height: 1.4;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ── Arrow / CTA ── */
@@ -444,32 +494,76 @@ onMounted(fetchServices);
   to { transform: rotate(360deg); }
 }
 
-/* ── Responsive ── */
+/* ── Responsive Slider ── */
+@media (max-width: 900px) {
+  .services-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 640px) {
   .page-content {
-    padding: 0 1.25rem;
+    padding: 6rem 0 3rem; /* padding: top left&right bottom */
+    gap: 2rem;
+  }
+
+  .page-header {
+    padding: 0 1.5rem;
   }
 
   .page-title {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
+  }
+
+  .services-list {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 1rem;
+    padding: 0 1.5rem 1.5rem;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .services-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
 
   .service-item {
-    padding: 0.65rem 1rem;
-    gap: 0.85rem;
-  }
-
-  .item-icon {
-    width: 36px;
-    height: 36px;
+    flex: 0 0 85%;
+    scroll-snap-align: center;
+    padding: 1.75rem;
+    height: 300px; /* Increased height for phone */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
   }
 
   .item-name {
-    font-size: 0.88rem;
+    font-size: 1.4rem;
   }
 
   .item-desc {
-    display: none;
+    display: block;
+    font-size: 0.9rem;
+    opacity: 0.9;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
+
+  .item-arrow {
+    margin-top: 1rem;
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  /* Adjust logo/back for mobile */
+  .page-logo { left: 1rem; top: 1rem; }
+  .page-logo img { height: 32px; }
+  .btn-back-top { right: 1rem; top: 1rem; padding: 0.4rem 0.8rem; font-size: 0.75rem; }
 }
 </style>
