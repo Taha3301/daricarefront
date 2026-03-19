@@ -96,6 +96,15 @@ const handleSignup = async () => {
     <!-- Right Side: Signup Form -->
     <div class="signup-form-side">
       <div class="signup-card">
+        <button class="back-to-home" @click="emit('navigate', 'landing')" title="Retour à l'accueil">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
+        <div class="card-logo" @click="emit('navigate', 'landing')">
+          <img :src="logoUrl" alt="daricare logo" />
+        </div>
         <div class="signup-header">
           <h1>{{ t.signup_welcome }}</h1>
           <p>{{ t.signup_fields_subtitle }}</p>
@@ -316,6 +325,31 @@ const handleSignup = async () => {
   padding: 2.5rem;
   border-radius: 24px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.back-to-home {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f8fafc;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.back-to-home:hover {
+  background: #2b69ad;
+  color: white;
+  transform: translateX(-3px);
 }
 
 .signup-header {
@@ -487,6 +521,18 @@ const handleSignup = async () => {
   margin-bottom: 1.5rem;
   text-align: center;
   font-size: 0.9rem;
+}
+
+.card-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+  cursor: pointer;
+}
+
+.card-logo img {
+  height: 48px;
+  width: auto;
 }
 
 @media (max-width: 1024px) {

@@ -190,14 +190,9 @@ onUnmounted(() => {
           
           <div v-else class="services-grid" :class="{ 'is-rtl': isAr }">
             <div 
-              v-for="(service, index) in sortedServices.slice(0, 6)" 
+              v-for="service in sortedServices.slice(0, 6)" 
               :key="service.id" 
               class="service-card"
-              :style="{ 
-                animationDelay: `${index * 120}ms`,
-                '--float-delay': `${index * 0.7}s`,
-                '--sway-duration': `${7 + index}s`
-              }"
               @click="emit('navigate', 'service-soins', service.id)"
             >
               <div class="card-image" :style="{ backgroundImage: service.image ? `url('${service.image}')` : 'none' }"></div>
@@ -455,7 +450,7 @@ onUnmounted(() => {
   max-height: 320px;
   z-index: 100;
   box-shadow: 0 16px 40px rgba(0,0,0,0.4);
-  animation: fadeInUp 0.2s ease-out;
+  animation: none;
 }
 
 .search-result-item {
@@ -521,7 +516,6 @@ onUnmounted(() => {
 
 .hero-header {
   text-align: center;
-  animation: fadeInDown 0.8s ease-out;
 }
 
 .hero-title {
@@ -574,10 +568,8 @@ onUnmounted(() => {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   /* Organic Multi-Axis Animation */
-  animation: 
-    premiumFadeInUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards,
-    organicSway var(--sway-duration, 8s) ease-in-out infinite alternate;
-  animation-delay: 0s, var(--float-delay, 0s);
+  animation: none;
+  animation-delay: 0s;
   height: 200px;
   display: flex;
   align-items: flex-end; /* Align content to bottom */
@@ -598,7 +590,6 @@ onUnmounted(() => {
 }
 
 .service-card:hover {
-  transform: translateY(-8px) scale(1.03) rotate(0deg) !important;
   box-shadow: 0 25px 40px -10px rgba(59, 130, 246, 0.25);
   border-color: #3b82f6;
   z-index: 10;
@@ -783,7 +774,6 @@ onUnmounted(() => {
 
 .feature-card:hover {
   background: white;
-  transform: translateY(-5px);
   box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.05);
   border-color: #e2e8f0;
 }

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useLanguage } from '../../composables/useLanguage';
 import { getApiUrl } from '../../config/api';
 import { storage } from '../../utils/storage';
+import { PushNotificationService } from '../../services/PushNotificationService';
 import logoUrl from '../../assets/LOGO H.png';
 
 const { t, currentLang } = useLanguage();
@@ -72,6 +73,9 @@ const handleLogin = async () => {
     storage.setItem('user_status', data.status, rememberMe.value);
     storage.setItem('superadmin', data.superadmin ? 'true' : 'false', rememberMe.value);
 
+    // Sync FCM token if available
+    PushNotificationService.saveTokenToBackend();
+
     if (data.status === 'PENDING') {
       emit('navigate', 'verification');
     } else if (data.role === 'admin') {
@@ -107,9 +111,18 @@ const handleLogin = async () => {
     </div>
 
     <!-- Right Side: Login Form -->
-    <div class="login-form-side">
-      <div class="login-card">
-        <div class="login-header">
+     <div class="login-form-side">
+       <div class="login-card">
+         <button class="back-to-home" @click="emit('navigate', 'landing')" title="Retour à l'accueil">
+           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+             <line x1="19" y1="12" x2="5" y2="12"></line>
+             <polyline points="12 19 5 12 12 5"></polyline>
+           </svg>
+         </button>
+         <div class="card-logo" @click="emit('navigate', 'landing')">
+           <img :src="logoUrl" alt="daricare logo" />
+         </div>
+         <div class="login-header">
           <h1>{{ t.login_welcome }}</h1>
           <p>{{ t.login_fields_subtitle }}</p>
         </div>
@@ -280,6 +293,31 @@ const handleLogin = async () => {
   padding: 3rem;
   border-radius: 24px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.back-to-home {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.back-to-home:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateX(-3px);
 }
 
 .login-header {
@@ -424,9 +462,24 @@ const handleLogin = async () => {
 }
 
 /* Responsive */
+.card-logo {
+  display: none;
+  justify-content: center;
+  margin-bottom: 2rem;
+  cursor: pointer;
+}
+
+.card-logo img {
+  height: 48px;
+  width: auto;
+}
+
 @media (max-width: 1024px) {
   .login-info-side {
     display: none;
+  }
+  .card-logo {
+    display: flex;
   }
 }
 

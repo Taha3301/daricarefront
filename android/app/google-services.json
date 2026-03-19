@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "627303460832",
+    "project_id": "daricare-871ba",
+    "storage_bucket": "daricare-871ba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:627303460832:android:ee60bf814f57909cc48585",
+        "android_client_info": {
+          "package_name": "com.daricare.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDK9R1Bh7Fbd5SFFlnvpE2cmeh-4NbVeVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

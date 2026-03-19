@@ -263,6 +263,13 @@ const fetchServices = async () => {
       if (soin) {
         openSoinForm(soin.id);
       }
+    } else if ((props.serviceId === 3 || props.serviceId === 2) && soins.value.length > 0) {
+      // Auto-open first soin for Ambulance (3) and Medical Equipment (2)
+      await nextTick();
+      const firstSoin = soins.value[0];
+      if (firstSoin) {
+        openSoinForm(firstSoin.id);
+      }
     }
   } catch (err: any) {
     console.error('Failed to fetch services:', err);
@@ -297,6 +304,29 @@ const saveModal = () => {
     soinId: activeSoin.value.id,
     answers: answers.value
   };
+
+  // For Ambulance, jump directly to Patient Info step and sync address
+  if (props.serviceId === 3) {
+    // Sync "Départ" to formData.address if found
+    for (const [key, value] of Object.entries(answers.value)) {
+      if (key.startsWith('text:')) {
+        const parts = key.split(':');
+        const idStr = parts[1];
+        if (!idStr) continue;
+        const fieldId = parseInt(idStr);
+        const field = activeSoin.value.texts.find(f => f.id === fieldId);
+        if (field && field.name && (field.name.toLowerCase().includes('départ') || field.name.toLowerCase().includes('depart'))) {
+          formData.value.address = value as string;
+          break;
+        }
+      }
+    }
+    currentStep.value = 4;
+  } else if (props.serviceId === 2) {
+    // For Medical Equipment, skip Step 2 (Ordonnance) and go to Step 3
+    currentStep.value = 3;
+  }
+
   const existingIndex = saved.value.findIndex(s => s.soinId === payload.soinId);
   if (existingIndex >= 0) {
     saved.value[existingIndex] = { soinId: payload.soinId, answers: payload.answers };
@@ -305,7 +335,6 @@ const saveModal = () => {
   }
   emit('save', payload);
   closeModal();
-  // Stay on step 1 to allow adding more soins
 };
 
 const editSoin = (soinId: number) => {
@@ -374,13 +403,17 @@ const formatSoinAnswers = (soinId: number) => {
 };
 
 const nextStep = () => {
-  if (currentStep.value < 5) {
+  if (currentStep.value === 1 && props.serviceId === 2) {
+    currentStep.value = 3;
+  } else if (currentStep.value < 5) {
     currentStep.value++;
   }
 };
 
 const prevStep = () => {
-  if (currentStep.value > 1) {
+  if (currentStep.value === 3 && props.serviceId === 2) {
+    currentStep.value = 1;
+  } else if (currentStep.value > 1) {
     currentStep.value--;
   }
 };
@@ -446,10 +479,14 @@ const submitRequest = async () => {
     else dVal = parseInt(formData.value.durationMode);
     fd.append('durationValue', dVal.toString());
 
-    // Slots
+    // Slots - Always send something as backend requires these
     if (formData.value.availabilitySlots && formData.value.availabilitySlots.length > 0) {
       fd.append('availabilityStart', formData.value.availabilitySlots[0]?.start || '08:00');
-      fd.append('availabilityEnd', formData.value.availabilitySlots[0]?.end || '10:00');
+      fd.append('availabilityEnd', formData.value.availabilitySlots[0]?.end || '20:00');
+    } else {
+      // Fallback if Step 3 was skipped
+      fd.append('availabilityStart', '08:00');
+      fd.append('availabilityEnd', '20:00');
     }
 
     // Backend log showed 'available'. We map our internal states.
@@ -691,7 +728,8 @@ onMounted(() => {
 
           <!-- Step 1: Voulez-vous ajouter un autre soin ? -->
           <div v-if="currentStep === 1" class="step-content">
-          <h2 class="step-question">{{ tx('Choisissez vos soin/s !', 'اختر خدماتك!') }}</h2>
+          <h2 class="step-question" v-if="serviceId !== 2">{{ tx('Choisissez vos soin/s !', 'اختر خدماتك!') }}</h2>
+          <h2 class="step-question" v-else>{{ tx('Dites-nous en plus sur votre besoin', 'أخبرنا المزيد عن احتياجاتك') }}</h2>
           
           <div v-if="saved.length > 0" class="saved-soins-list">
             <div v-for="savedItem in saved" :key="savedItem.soinId" class="saved-soin-item">
@@ -703,7 +741,7 @@ onMounted(() => {
             </div>
           </div>
           
-          <div class="soins-grid">
+          <div class="soins-grid" v-if="serviceId !== 2">
             <button
               v-for="soin in soins"
               :key="soin.id"
@@ -726,6 +764,12 @@ onMounted(() => {
               </div>
             </button>
           </div>
+
+          <!-- Re-fill CTA for Service 2 if modal is closed -->
+          <div v-if="serviceId === 2 && saved.length === 0" class="empty-soin-cta" @click="soins[0] && openSoinForm(soins[0].id)">
+            <div class="cta-icon">+</div>
+            <span>{{ tx('Remplir le formulaire de location', 'ملء استمارة الإيجار') }}</span>
+          </div>
           
           <div class="step-actions">
             <button class="btn-primary" @click="nextStep">{{ tx('Continuer', 'متابعة') }}</button>
@@ -733,7 +777,7 @@ onMounted(() => {
         </div>
 
         <!-- Step 2: Avez-vous une ordonnance ? -->
-        <div v-else-if="currentStep === 2" class="step-content">
+        <div v-else-if="currentStep === 2 && serviceId !== 2" class="step-content">
           <div class="mandatory-notice">{{ tx('* champs obligatoires', '* حقول إلزامية') }}</div>
           <h2 class="step-question">{{ tx('Avez-vous une ordonnance ? *', 'هل لديك وصفة طبية؟ *') }}</h2>
           
@@ -799,7 +843,7 @@ onMounted(() => {
 
         <!-- Step 3: Où et quand souhaitez-vous faire vos soins ? -->
         <div v-else-if="currentStep === 3" class="step-content">
-          <div class="mandatory-notice">{{ tx('* champs obligatoires', '* حقول إلزامية') }}</div>
+          <div v-if="serviceId !== 2" class="mandatory-notice">{{ tx('* champs obligatoires', '* حقول إلزامية') }}</div>
           <h2 class="step-question">{{ tx('Où et quand souhaitez-vous faire vos soins ?', 'أين ومتى تريد تلقي الرعاية؟') }}</h2>
           
           <div class="form-group mb-2">
@@ -821,7 +865,7 @@ onMounted(() => {
           </div>
 
           <div class="form-group">
-            <label>{{ tx('Durée des soins (en jours) *', 'مدة الرعاية (بالأيام) *') }}</label>
+            <label>{{ props.serviceId === 2 ? tx('Durée des location(en jours) *', 'مدة الإيجار (بالأيام) *') : tx('Durée des soins (en jours) *', 'مدة الرعاية (بالأيام) *') }}</label>
             <div class="duration-pills">
               <label v-for="d in ['1', '7', '10', '15', '30']" :key="d" class="pill-option" :class="{ active: formData.durationMode === d }">
                 <input type="radio" v-model="formData.durationMode" :value="d" class="hidden" />
@@ -930,7 +974,7 @@ onMounted(() => {
 
         <!-- Step 4: Qui est le patient ? -->
         <div v-else-if="currentStep === 4" class="step-content">
-          <div class="mandatory-notice">* champs obligatoires</div>
+          <div v-if="serviceId !== 2" class="mandatory-notice">* champs obligatoires</div>
           <h2 class="step-question">Qui est le patient ?</h2>
           <p class="step-instruction">
             Saisissez vos coordonnées afin qu’un professionnel de santé qualifié et disponible prenne contact avec vous pour convenir d’un rendez-vous.
@@ -1249,18 +1293,18 @@ onMounted(() => {
           </template>
 
           <!-- Visit Frequency Section -->
-          <div class="field frequency-section">
+          <div v-if="props.serviceId !== 3 && props.serviceId !== 2 && activeSoin?.name !== 'Soins infirmiers généraux'" class="field frequency-section">
             <div class="field-label" :dir="isAr ? 'rtl' : 'ltr'">{{ tx('Le professionnel doit passer *', 'يجب أن يمر المتخصص *') }}</div>
             <div class="frequency-options">
-              <label class="radio-card" :class="{ active: answers['visitType'] === 'once', 'fixed-active': props.serviceId === 3 }">
-                <input type="radio" v-model="answers['visitType']" value="once" class="hidden" :disabled="props.serviceId === 3" />
+              <label class="radio-card" :class="{ active: answers['visitType'] === 'once', 'fixed-active': props.serviceId === 3 || props.serviceId === 2 }">
+                <input type="radio" v-model="answers['visitType']" value="once" class="hidden" :disabled="props.serviceId === 3 || props.serviceId === 2" />
                 <div class="radio-content">
                   <div class="radio-circle"></div>
                   <span>{{ tx('Une seule fois', 'مرة واحدة') }}</span>
                 </div>
               </label>
 
-              <label v-if="props.serviceId !== 3" class="radio-card" :class="{ active: answers['visitType'] === 'recurring' }">
+              <label v-if="props.serviceId !== 3 && props.serviceId !== 2" class="radio-card" :class="{ active: answers['visitType'] === 'recurring' }">
                 <input type="radio" v-model="answers['visitType']" value="recurring" class="hidden" />
                 <div class="radio-content">
                   <div class="radio-circle"></div>
@@ -1314,6 +1358,40 @@ onMounted(() => {
   padding: 100px 2rem 2rem;
   overflow-x: hidden;
   box-sizing: border-box;
+}
+
+.empty-soin-cta {
+  background: white;
+  border: 2px dashed #e2e8f0;
+  border-radius: 20px;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #64748b;
+  font-weight: 600;
+  margin: 1rem 0;
+}
+
+.empty-soin-cta:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: #f8fafc;
+}
+
+.cta-icon {
+  font-size: 2rem;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border-radius: 50%;
+  color: #3b82f6;
 }
 
 .layout {

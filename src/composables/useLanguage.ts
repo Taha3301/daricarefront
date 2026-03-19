@@ -101,7 +101,7 @@ const translations = {
         signup_title: 'Soignez, nous gérons le reste.',
         signup_subtitle: 'Inscrivez-vous en 2 minutes et commencez à recevoir des demandes de soins à domicile.',
         signup_welcome: 'Créer un compte',
-        signup_fields_subtitle: 'Rejoignez la plus grande communauté de professionnels de santé au Maroc.',
+        signup_fields_subtitle: 'Rejoignez la plus grande communauté de professionnels de santé en Tunisie.',
         signup_name_label: 'Nom complet',
         signup_phone_label: 'Téléphone',
         signup_btn: 'S\'inscrire',
@@ -122,7 +122,7 @@ const translations = {
         help_contact_title: 'Contactez-nous',
         help_contact_subtitle: 'Vous ne trouvez pas la réponse à votre question ? Notre équipe est disponible 7j/7.',
         help_contact_phone: 'Téléphone : +216 21 918 926',
-        help_contact_email: 'Email : contact@proofagency.com',
+        help_contact_email: 'Email : contact@proofagency.tn',
         help_contact_chat: 'Chattez avec nous',
 
         // About Page
@@ -132,7 +132,7 @@ const translations = {
         about_mission_title: 'Notre Mission',
         about_mission_desc: 'Connecter les meilleurs professionnels de santé avec les patients qui en ont le plus besoin, à travers une plateforme sécurisée, humaine et innovante.',
         about_vision_title: 'Notre Vision',
-        about_vision_desc: 'Devenir le leader de la santé connectée au Maroc en plaçant l\'humanité et la technologie au service du bien-être de chacun.',
+        about_vision_desc: 'Devenir le leader de la santé connectée en Tunisie en plaçant l\'humanité et la technologie au service du bien-être de chacun.',
         about_values_title: 'Nos Valeurs Fondamentales',
         about_val1_title: 'Excellence',
         about_val1_desc: 'La qualité des soins est notre exigence première et quotidienne.',
@@ -253,7 +253,7 @@ const translations = {
         signup_title: 'اعتنِ بالمرضى، ونحن نتكفل بالباقي.',
         signup_subtitle: 'سجل في دقيقتين وابدأ في استقبال طلبات الرعاية المنزلية.',
         signup_welcome: 'إنشاء حساب',
-        signup_fields_subtitle: 'انضم إلى أكبر مجتمع للمتخصصين الصحيين في المغرب.',
+        signup_fields_subtitle: 'انضم إلى أكبر مجتمع للمتخصصين الصحيين في تونس.',
         signup_name_label: 'الاسم الكامل',
         signup_phone_label: 'رقم الهاتف',
         signup_btn: 'إنشاء الحساب',
@@ -274,7 +274,7 @@ const translations = {
         help_contact_title: 'اتصل بنا',
         help_contact_subtitle: 'لم تجد إجابة لسؤالك؟ فريقنا متاح 7 أيام في الأسبوع.',
         help_contact_phone: 'الهاتف: +216 21 918 926',
-        help_contact_email: 'البريد الإلكتروني: contact@proofagency.com',
+        help_contact_email: 'البريد الإلكتروني: contact@proofagency.tn',
         help_contact_chat: 'تحدث معنا',
 
         // About Page
@@ -284,7 +284,7 @@ const translations = {
         about_mission_title: 'مهمتنا',
         about_mission_desc: 'ربط أفضل المتخصصين الصحيين بالمرضى الذين هم في أمس الحاجة إليهم، من خلال منصة آمنة، إنسانية ومبتكرة.',
         about_vision_title: 'رؤيتنا',
-        about_vision_desc: 'أن نصبح الرائد في الصحة المتصلة في المغرب من خلال وضع الإنسانية والتكنولوجيا في خدمة رفاهية الجميع.',
+        about_vision_desc: 'أن نصبح الرائد في الصحة المتصلة في تونس من خلال وضع الإنسانية والتكنولوجيا في خدمة رفاهية الجميع.',
         about_values_title: 'قيمنا الأساسية',
         about_val1_title: 'التميز',
         about_val1_desc: 'جودة الرعاية هي مطلبنا الأول واليومي.',

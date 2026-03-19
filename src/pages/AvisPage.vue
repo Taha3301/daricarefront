@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useLanguage } from '../composables/useLanguage';
 import { getApiUrl } from '../config/api';
+import bgImage from '../assets/bg1.jpg';
 
 const emit = defineEmits(['navigate']);
 const { t, isAr } = useLanguage();
+const tx = (fr: string, ar: string) => isAr.value ? ar : fr;
 
 const rating = ref(5);
 const comment = ref('');
@@ -14,6 +16,24 @@ const wouldRecommend = ref(true);
 const isSubmitting = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
+const avisList = ref<any[]>([]);
+const isLoadingAvis = ref(false);
+
+const fetchApprovedAvis = async () => {
+  isLoadingAvis.value = true;
+  try {
+    const res = await fetch(getApiUrl('/avis?onlyApproved=true'));
+    if (res.ok) {
+      avisList.value = await res.json();
+    }
+  } catch (err) {
+    console.error('Error fetching approved avis:', err);
+  } finally {
+    isLoadingAvis.value = false;
+  }
+};
+
+onMounted(fetchApprovedAvis);
 
 const setRating = (val: number) => {
   rating.value = val;
@@ -82,7 +102,7 @@ const submitAvis = async () => {
 </script>
 
 <template>
-  <div class="avis-page" :dir="isAr ? 'rtl' : 'ltr'">
+  <div class="avis-page" :dir="isAr ? 'rtl' : 'ltr'" :style="{ backgroundImage: `url(${bgImage})` }">
     <div class="avis-container">
       <header class="avis-header">
         <button class="btn-back" @click="emit('navigate', 'landing')">
@@ -190,6 +210,37 @@ const submitAvis = async () => {
           </svg>
         </button>
       </form>
+
+      <!-- Reviews Display Section -->
+      <section v-if="avisList.length > 0" class="avis-list-section">
+        <h2 class="section-title">{{ tx('Ce que disent nos patients', 'ما يقوله مرضانا') }}</h2>
+        <div class="avis-grid">
+          <div v-for="avis in avisList" :key="avis.id" class="avis-card">
+            <div class="avis-card-header">
+              <div class="patient-info">
+                <div class="patient-avatar">
+                  {{ avis.patient?.firstname?.charAt(0).toUpperCase() || 'P' }}
+                </div>
+                <div class="patient-details">
+                  <div class="patient-name">{{ avis.patient?.firstname }} {{ avis.patient?.lastname }}</div>
+                  <div class="avis-date">{{ new Date(avis.createdAt).toLocaleDateString(isAr ? 'ar-TN' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</div>
+                </div>
+              </div>
+              <div class="avis-rating">
+                <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" :fill="i <= avis.rating ? '#fbbf24' : '#e2e8f0'" width="16" height="16">
+                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                </svg>
+              </div>
+            </div>
+            <h3 class="avis-card-title">{{ avis.title }}</h3>
+            <p class="avis-card-comment">{{ avis.comment }}</p>
+            <div v-if="avis.wouldRecommend" class="recommend-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>{{ tx('Recommande DariCare', 'ينصح بـ داري كير') }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -198,8 +249,25 @@ const submitAvis = async () => {
 .avis-page {
   padding: 100px 20px 60px;
   min-height: 100vh;
-  background: radial-gradient(circle at top right, rgba(43, 105, 173, 0.05), transparent),
-              radial-gradient(circle at bottom left, rgba(105, 170, 98, 0.05), transparent);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Add an overlay to ensure readability */
+.avis-page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .avis-container {
@@ -410,6 +478,126 @@ const submitAvis = async () => {
   }
   .avis-form {
     padding: 1.5rem;
+  }
+}
+
+/* Reviews List Styles */
+.avis-list-section {
+  margin-top: 5rem;
+  padding-bottom: 4rem;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 3rem;
+  letter-spacing: -0.01em;
+}
+
+.avis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.avis-card {
+  background: white;
+  padding: 1.75rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f1f5f9;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.avis-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.avis-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.patient-info {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.patient-avatar {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+.patient-name {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.avis-date {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 0.125rem;
+}
+
+.avis-rating {
+  display: flex;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.avis-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.avis-card-comment {
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+}
+
+.recommend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f0fdf4;
+  color: #166534;
+  padding: 0.375rem 0.75rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid #dcfce7;
+}
+
+@media (max-width: 640px) {
+  .avis-grid {
+    grid-template-columns: 1fr;
+  }
+  .section-title {
+    font-size: 1.5rem;
   }
 }
 </style>

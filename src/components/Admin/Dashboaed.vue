@@ -11,6 +11,7 @@ import SidebarAdmin from './SidebarAdmin.vue';
 import Configuration from './Configuration.vue';
 import AdminPatients from './AdminPatients.vue';
 import DetailedRequests from './DetailedRequests.vue';
+import AdminAvis from './AdminAvis.vue';
 import logo from '../../assets/LOGO H.png';
 
 interface DashboardStats {
@@ -352,6 +353,7 @@ const getStatusClass = (status: string) => {
         <AdminPatients v-if="activeTab === 'patients'" />
         <BookingManagement v-if="activeTab === 'requests'" />
         <DetailedRequests v-if="activeTab === 'detailed-requests'" />
+        <AdminAvis v-if="activeTab === 'avis'" />
         <Configuration v-if="activeTab === 'settings'" />
 
         <!-- Professional View Modal (ReadOnly for regular list) -->

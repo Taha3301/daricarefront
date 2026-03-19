@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useLanguage } from '../composables/useLanguage';
+import bgImage from '../assets/propos.jpg';
 
 const { t, isAr } = useLanguage();
 const isVisible = ref(false);
@@ -13,7 +14,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="about-page" :class="{ 'is-ar': isAr, 'is-visible': isVisible }">
+  <div class="about-page" :class="{ 'is-ar': isAr, 'is-visible': isVisible }" :style="{ backgroundImage: `url(${bgImage})` }">
     <!-- Hero Section -->
     <section class="about-hero">
       <div class="hero-glow"></div>
@@ -104,11 +105,27 @@ onMounted(() => {
 .about-page {
   padding-top: 100px;
   min-height: 100vh;
-  background: #f8fafc;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: #1e293b;
   overflow-x: hidden;
   position: relative;
   font-family: 'Outfit', sans-serif;
+}
+
+/* Clear overlay for readability */
+.about-page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .container {
@@ -240,10 +257,10 @@ onMounted(() => {
 
 /* How it works */
 .how-it-works {
-  padding: 6rem 0;
+  padding: 4rem 0;
   background: white;
-  border-radius: 60px;
-  margin: 4rem 2rem;
+  border-radius: 40px;
+  margin: 2rem 1rem;
 }
 
 .steps-grid {
@@ -273,6 +290,7 @@ onMounted(() => {
   font-weight: 900;
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   opacity: 0.15;
   position: absolute;
@@ -423,12 +441,49 @@ onMounted(() => {
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .hero-title {
+    font-size: clamp(2rem, 10vw, 3.5rem);
+  }
+  
+  .steps-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
 @media (max-width: 992px) {
   .mv-grid {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
+  
   .values-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .about-hero {
+    padding: 4rem 0;
+  }
+  
+  .mv-card {
+    padding: 2rem;
+  }
+  
+  .how-it-works {
+    margin: 2rem 0.5rem;
+    border-radius: 30px;
+    padding: 3rem 0;
+  }
+  
+  .step-card {
+    padding: 2.5rem 1.5rem 1.5rem;
+  }
+  
+  .step-number {
+    font-size: 2.5rem;
   }
 }
 
@@ -436,8 +491,17 @@ onMounted(() => {
   .values-grid {
     grid-template-columns: 1fr;
   }
-  .about-hero {
-      padding: 4rem 0;
+  
+  .container {
+    padding: 0 1.25rem;
+  }
+  
+  .hero-tag {
+    font-size: 0.75rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.1rem;
   }
 }
 </style>

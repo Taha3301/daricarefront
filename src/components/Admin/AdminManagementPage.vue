@@ -24,7 +24,7 @@ const handleNavigate = (view: string) => {
   if (view === 'admin-management') return;
   
   // If navigating to other admin sections, go back to the dashboard with that tab
-  if (['overview', 'verification-professional', 'professionals', 'patients', 'requests', 'services-catalog', 'detailed-requests', 'services-management', 'settings'].includes(view)) {
+  if (['overview', 'verification-professional', 'professionals', 'patients', 'requests', 'services-catalog', 'detailed-requests', 'services-management', 'settings', 'avis'].includes(view)) {
     // We'll need a way to pass the tab to the dashboard. 
     // For now, let's just go to the dashboard and let it handle its default.
     // Or we could pass a param if App.vue supported it.

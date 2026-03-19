@@ -82,6 +82,15 @@ const handleResetPassword = async () => {
     <!-- Right Side: Reset Password Form -->
     <div class="login-form-side">
       <div class="login-card">
+        <button class="back-to-home" @click="emit('navigate', 'landing')" title="Retour à l'accueil">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
+        <div class="card-logo" @click="emit('navigate', 'landing')">
+          <img :src="logoUrl" alt="daricare logo" />
+        </div>
         <div class="login-header">
           <h1>Nouveau mot de passe</h1>
           <p>Veuillez définir votre nouveau mot de passe ci-dessous.</p>
@@ -250,6 +259,31 @@ const handleResetPassword = async () => {
   padding: 3rem;
   border-radius: 24px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.back-to-home {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.back-to-home:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateX(-3px);
 }
 
 .login-header {
@@ -394,6 +428,18 @@ const handleResetPassword = async () => {
 
 .login-footer a:hover {
   text-decoration: underline;
+}
+
+.card-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+  cursor: pointer;
+}
+
+.card-logo img {
+  height: 48px;
+  width: auto;
 }
 
 @media (max-width: 1024px) {

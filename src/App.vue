@@ -19,6 +19,7 @@ import ServiceSelection from './components/ServiceSelection.vue'
 import HelpPage from './pages/HelpPage.vue'
 import AboutPage from './pages/AboutPage.vue'
 import AvisPage from './pages/AvisPage.vue'
+import { PushNotificationService } from './services/PushNotificationService'
 
 const { currentLang, setLang } = useLanguage();
 
@@ -46,6 +47,9 @@ onMounted(() => {
   if (!localStorage.getItem('daricare_lang')) {
     showLangPopup.value = true;
   }
+
+  // Initialize Push Notifications for Mobile
+  PushNotificationService.init();
 
   // Check for reset password token in URL
   const fullUrl = window.location.href;
@@ -134,9 +138,9 @@ const handleNewRequest = (data: any) => {
 
             <!-- Arabic -->
             <button class="lang-option lang-option-ar" @click="chooseLang('ar')">
-              <span class="lang-flag">🇸🇦</span>
+              <span class="lang-flag">🇹🇳</span>
               <span class="lang-name">العربية</span>
-              <span class="lang-tag">عربي</span>
+              <span class="lang-tag">تونس</span>
             </button>
           </div>
         </div>
@@ -490,13 +494,7 @@ main {
 
 @media (max-width: 768px) {
   .floating-avis-btn {
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: 52px;
-    height: 52px;
-  }
-  .lang-ar .floating-avis-btn {
-    left: 1.5rem;
+    display: none;
   }
 }
 </style>
