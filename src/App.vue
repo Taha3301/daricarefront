@@ -1,24 +1,48 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, defineAsyncComponent, defineComponent, h, computed } from 'vue'
 import { storage } from './utils/storage'
 import { useLanguage, type Lang } from './composables/useLanguage'
 import Navbar from './components/Navbar.vue'
-import Login from './components/login/Login.vue'
-import Signup from './components/login/signup.vue'
-import ForgotPassword from './components/login/ForgotPassword.vue'
-import ResetPassword from './components/login/ResetPassword.vue'
-import VerificationPage from './pages/VerificationPage.vue'
-import LandingPage from './components/landingpage.vue'
-import ProDashboard from './components/Professional/page1.vue'
-import AdminDashboard from './components/Admin/Dashboaed.vue'
-import AdminManagementPage from './components/Admin/AdminManagementPage.vue'
-import BookingForm from './components/HelpRequestForm.vue'
-import NurseBookingForm from './components/NurseBookingForm.vue'
-import ServiceSoinsPage from './components/ServiceSoinsPage.vue'
-import ServiceSelection from './components/ServiceSelection.vue'
-import HelpPage from './pages/HelpPage.vue'
-import AboutPage from './pages/AboutPage.vue'
-import AvisPage from './pages/AvisPage.vue'
+
+// ── Shared Loading / Error shims ─────────────────────────────────────────────
+const AppLoader = defineComponent({
+  name: 'AppLoader',
+  setup() {
+    return () => h('div', { class: 'async-loading' }, [
+      h('div', { class: 'async-spinner' }),
+    ])
+  }
+})
+
+const AppError = defineComponent({
+  name: 'AppError',
+  setup() {
+    return () => h('div', { class: 'async-error' }, [
+      h('p', '⚠️ Une erreur est survenue. Veuillez rafraîchir la page.'),
+    ])
+  }
+})
+
+const asyncOpts = { loadingComponent: AppLoader, errorComponent: AppError, delay: 200, timeout: 10000 }
+
+// ── Lazy-loaded routes ────────────────────────────────────────────────────────
+const Login = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/login/Login.vue') })
+const Signup = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/login/signup.vue') })
+const ForgotPassword = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/login/ForgotPassword.vue') })
+const ResetPassword = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/login/ResetPassword.vue') })
+const VerificationPage = defineAsyncComponent({ ...asyncOpts, loader: () => import('./pages/VerificationPage.vue') })
+const LandingPage = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/landingpage.vue') })
+const ProDashboard = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/Professional/page1.vue') })
+const AdminDashboard = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/Admin/Dashboaed.vue') })
+const AdminManagementPage = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/Admin/AdminManagementPage.vue') })
+const BookingForm = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/HelpRequestForm.vue') })
+const NurseBookingForm = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/NurseBookingForm.vue') })
+const ServiceSoinsPage = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/ServiceSoinsPage.vue') })
+const ServiceSelection = defineAsyncComponent({ ...asyncOpts, loader: () => import('./components/ServiceSelection.vue') })
+const HelpPage = defineAsyncComponent({ ...asyncOpts, loader: () => import('./pages/HelpPage.vue') })
+const AboutPage = defineAsyncComponent({ ...asyncOpts, loader: () => import('./pages/AboutPage.vue') })
+const AvisPage = defineAsyncComponent({ ...asyncOpts, loader: () => import('./pages/AvisPage.vue') })
+
 import { PushNotificationService } from './services/PushNotificationService'
 
 const { currentLang, setLang } = useLanguage();
@@ -105,6 +129,58 @@ const handleNewRequest = (data: any) => {
   };
   medicalRequests.value.unshift(newRequest);
 };
+
+const handleNavigation = (view: string, serviceId?: number, soinId?: number) => {
+  currentView.value = view;
+  if (serviceId != null) selectedServiceId.value = serviceId;
+  if (soinId != null) selectedSoinId.value = soinId;
+  else if (view !== 'service-soins') selectedSoinId.value = null;
+};
+
+const handleSaveSoin = (payload: any) => {
+  console.log('Saved soin form:', payload);
+};
+
+const currentViewComponent = computed(() => {
+  switch (currentView.value) {
+    case 'landing': return LandingPage;
+    case 'service-selection': return ServiceSelection;
+    case 'service-soins': return ServiceSoinsPage;
+    case 'pro': return ProDashboard;
+    case 'admin-dashboard': return AdminDashboard;
+    case 'admin-management': return AdminManagementPage;
+    case 'booking': return BookingForm;
+    case 'nurse-booking': return NurseBookingForm;
+    case 'help': return HelpPage;
+    case 'about': return AboutPage;
+    case 'avis': return AvisPage;
+    case 'signup': return Signup;
+    case 'forgot-password': return ForgotPassword;
+    case 'reset-password': return ResetPassword;
+    case 'verification': return VerificationPage;
+    default: return Login;
+  }
+});
+
+const currentViewProps = computed(() => {
+  switch (currentView.value) {
+    case 'service-soins': 
+      return { 
+        serviceId: selectedServiceId.value || 0, 
+        initialSoinId: selectedSoinId.value ?? undefined 
+      };
+    case 'pro': 
+      return { requests: medicalRequests.value };
+    case 'booking': 
+      return { initialService: selectedService.value };
+    case 'nurse-booking': 
+      return { service: selectedService.value };
+    case 'reset-password': 
+      return { token: resetToken.value };
+    default: 
+      return {};
+  }
+});
 </script>
 
 <template>
@@ -153,62 +229,15 @@ const handleNewRequest = (data: any) => {
     />
     
     <main>
-      <LandingPage
-        v-if="currentView === 'landing'"
-        @navigate="(view: string, serviceId?: number, soinId?: number) => { 
-          currentView = view; 
-          if (serviceId != null) selectedServiceId = serviceId;
-          if (soinId != null) selectedSoinId = soinId;
-          else selectedSoinId = null;
-        }"
-      />
-      <ServiceSelection
-        v-else-if="currentView === 'service-selection'"
-        @navigate="(view: string, serviceId?: number) => { 
-          currentView = view; 
-          if (serviceId != null) selectedServiceId = serviceId; 
-        }"
-      />
-      <ServiceSoinsPage
-        v-else-if="currentView === 'service-soins'"
-        :serviceId="selectedServiceId || 0"
-        :initialSoinId="selectedSoinId ?? undefined"
-        @navigate="(view: string) => currentView = view"
-        @save="(payload) => { console.log('Saved soin form:', payload); }"
-      />
-      <ProDashboard 
-        v-else-if="currentView === 'pro'" 
-        :requests="medicalRequests"
-        @navigate="(view) => currentView = view" 
-      />
-      <AdminDashboard
-        v-else-if="currentView === 'admin-dashboard'"
-        @navigate="(view: string) => currentView = view"
-      />
-      <AdminManagementPage
-        v-else-if="currentView === 'admin-management'"
-        @navigate="(view: string) => currentView = view"
-      />
-      <BookingForm 
-        v-else-if="currentView === 'booking'" 
-        :initialService="selectedService"
-        @navigate="(view) => currentView = view" 
-        @submit="handleNewRequest"
-      />
-      <NurseBookingForm
-        v-else-if="currentView === 'nurse-booking'"
-        :service="selectedService"
-        @navigate="(view: string) => currentView = view"
-        @submit="handleNewRequest"
-      />
-      <HelpPage v-else-if="currentView === 'help'" @navigate="(view: string) => currentView = view" />
-      <AboutPage v-else-if="currentView === 'about'" @navigate="(view: string) => currentView = view" />
-      <AvisPage v-else-if="currentView === 'avis'" @navigate="(view: string) => currentView = view" />
-      <Signup v-else-if="currentView === 'signup'" @navigate="(view: string) => currentView = view" />
-      <ForgotPassword v-else-if="currentView === 'forgot-password'" @navigate="(view) => currentView = view" />
-      <ResetPassword v-else-if="currentView === 'reset-password'" :token="resetToken" @navigate="(view) => currentView = view" />
-      <VerificationPage v-else-if="currentView === 'verification'" @navigate="(view) => currentView = view" />
-      <Login v-else @navigate="(view) => currentView = view" />
+      <KeepAlive :max="5">
+        <component 
+          :is="currentViewComponent" 
+          v-bind="currentViewProps"
+          @navigate="handleNavigation"
+          @submit="handleNewRequest"
+          @save="handleSaveSoin"
+        />
+      </KeepAlive>
     </main>
 
     <!-- Floating WhatsApp Button -->
@@ -244,8 +273,38 @@ const handleNewRequest = (data: any) => {
 </template>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
+/* ── Async Component Loading & Error States ─────────── */
+.async-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.async-spinner {
+  width: 42px;
+  height: 42px;
+  border: 4px solid rgba(43, 105, 173, 0.15);
+  border-top-color: #2b69ad;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.async-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  font-weight: 700;
+  color: #b91c1c;
+  font-size: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
 
 :root {
   --primary-color: #2b69ad;
@@ -263,11 +322,14 @@ body {
   background-color: var(--bg-light);
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden; /* Global fix for layout shift */
+  width: 100%;
 }
 
 .lang-ar body,
 .lang-ar {
   font-family: 'Tajawal', 'Inter', sans-serif;
+  overflow-x: hidden;
 }
 
 #app {
@@ -275,6 +337,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 .app-container {
@@ -297,8 +360,16 @@ main {
   align-items: center;
   justify-content: center;
   background: rgba(5, 15, 40, 0.72);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+@media (max-width: 768px) {
+  .lang-popup-overlay {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(5, 15, 40, 0.9);
+  }
 }
 
 .lang-popup {

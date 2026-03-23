@@ -151,8 +151,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
-
 .navbar {
   position: fixed;
   top: 0;
@@ -410,8 +408,17 @@ onUnmounted(() => {
     -webkit-backdrop-filter: none !important;
     box-shadow: none !important;
     border-bottom: none !important;
-    height: 70px !important; /* Keep standard height */
+    height: 64px !important; /* Fixed height for mobile to prevent layout thrashing */
+    transition: background 0.3s ease, box-shadow 0.3s ease;
   }
+
+  .navbar.scrolled {
+    background: white !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05) !important;
+    border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+  }
+
+  .brand-logo { height: 32px !important; }
 
   .bottom-nav {
     display: flex;

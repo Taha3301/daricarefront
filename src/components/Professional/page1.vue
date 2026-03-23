@@ -1,4 +1,3 @@
-```
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storage } from '../../utils/storage';
@@ -10,15 +9,7 @@ import AgendaComponent from './AgendaComponent.vue';
 import AnalyticsDashboard from './AnalyticsDashboard.vue';
 import SettingsProf from './SettingsProf.vue';
 
-interface MedicalRequest {
-  id: number;
-  clientName: string;
-  type: string;
-  urgency: 'high' | 'medium' | 'low';
-  time: string;
-  distance: string;
-  description: string;
-}
+// Unused MedicalRequest interface removed
 
 interface Notification {
   id: number;
@@ -29,12 +20,8 @@ interface Notification {
   bookingDetails?: any;
 }
 
-const props = defineProps({
-  requests: {
-    type: Array as () => MedicalRequest[],
-    required: true
-  }
-});
+// Props removed because they were unused and causing build errors
+// const props = defineProps({ ... });
 
 const userName = ref(localStorage.getItem('user_name') || 'Professionnel');
 const userEmail = ref('');

@@ -1,0 +1,5 @@
+﻿
+> daricarefront@0.0.0 build
+> vue-tsc -b && vite build
+
+src/components/Admin/SidebarAdmin.vue(4,7): error TS6133: 'props' is declared but its value is never read.

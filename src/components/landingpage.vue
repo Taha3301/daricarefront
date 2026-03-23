@@ -195,7 +195,12 @@ onUnmounted(() => {
               class="service-card"
               @click="emit('navigate', 'service-soins', service.id)"
             >
-              <div class="card-image" :style="{ backgroundImage: service.image ? `url('${service.image}')` : 'none' }"></div>
+              <div 
+                class="card-image" 
+                :style="{ backgroundImage: service.image ? `url('${service.image}')` : 'none' }"
+                role="img"
+                :aria-label="isAr && service.name_ar ? service.name_ar : service.name"
+              ></div>
               <div class="card-shimmer"></div>
               <div class="card-overlay"></div>
               <div class="card-content">
@@ -261,8 +266,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
-
 .landing-page {
   font-family: 'Outfit', sans-serif;
   min-height: 100vh;
@@ -293,13 +296,14 @@ onUnmounted(() => {
   background-position: center;
   background-repeat: no-repeat;
   animation: kenBurns 40s ease-in-out infinite;
-  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 @keyframes kenBurns {
-  0% { transform: scale(1) translate(0, 0); }
-  50% { transform: scale(1.1) translate(-2%, -1%); }
-  100% { transform: scale(1) translate(0, 0); }
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 .hero-overlay {
@@ -441,11 +445,11 @@ onUnmounted(() => {
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: rgba(10, 20, 50, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 16px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(10, 20, 50, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   overflow-y: auto;
   max-height: 320px;
   z-index: 100;
@@ -573,7 +577,8 @@ onUnmounted(() => {
   height: 200px;
   display: flex;
   align-items: flex-end; /* Align content to bottom */
-  will-change: transform, opacity;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .card-image {
@@ -679,11 +684,9 @@ onUnmounted(() => {
   font-weight: 800;
   color: #ffffff;
   margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   transition: all 0.3s ease;
   text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  line-height: 1.2;
 }
 
 .service-teaser {
@@ -861,17 +864,153 @@ onUnmounted(() => {
 }
 
 @media (max-width: 900px) {
-  .services-grid { grid-template-columns: repeat(2, 1fr); }
-  .features-grid { grid-template-columns: 1fr; max-width: 500px; }
-  .hero-title { font-size: 2.5rem; }
-  .hero-content { padding-top: 4rem; }
+  .features-grid { grid-template-columns: 1fr; max-width: 600px; margin: 0 auto; }
   .section-title { font-size: 2rem; }
+  .content-section { padding: 4rem 2rem; }
+}
+
+@media (max-width: 768px) {
+  .hero-content {
+    padding-top: 2.5rem;
+    gap: 0.75rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .hero-title {
+    font-size: 1.7rem;
+    line-height: 1.1;
+    margin-bottom: 0.1rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .services-grid { 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 0.75rem;
+  }
+  
+  .hero-bg {
+    animation: none; /* Disable Ken Burns on mobile */
+  }
+  
+  .blob {
+    display: none; /* Hide expensive blur blobs on mobile */
+  }
+  
+  .search-bar {
+    padding: 0.6rem 1rem;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  .search-input {
+    font-size: 0.85rem;
+  }
+  
+  .search-dropdown {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(10, 20, 50, 0.98);
+  }
+  
+  .service-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Faster transitions */
+    height: 140px; /* Slightly taller for safety and premium feel */
+  }
+
+  .card-content {
+    padding: 0.85rem;
+  }
+
+  .card-content h3 {
+    font-size: 0.9rem; /* Slightly smaller for more space */
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.1;
+  }
+
+  .service-teaser {
+    font-size: 0.7rem;
+    line-height: 1.1;
+    display: -webkit-box;
+    -webkit-line-clamp: 1; /* Limit to 1 line on mobile to avoid overlap */
+    line-clamp: 1;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .card-icon {
+    padding: 8px;
+    background: #3b82f6; /* Solid blue for better visibility */
+    color: white;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .content-section {
+    padding: 3rem 1rem;
+  }
+
+  .section-header {
+    margin-bottom: 2rem;
+  }
+
+  .section-title {
+    font-size: 1.6rem;
+  }
+
+  .feature-card {
+    padding: 1.75rem 1.25rem;
+    text-align: left;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+
+  .feature-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    margin: 0;
+  }
+
+  .feature-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .feature-card p {
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+}
+
+.landing-page {
+  overflow-x: hidden; /* Prevent horizontal scroll/shift */
+  width: 100%;
 }
 
 @media (max-width: 600px) {
-  .services-grid { grid-template-columns: 1fr; }
-  .hero-title { font-size: 2rem; }
-  .card-image { height: 160px; }
+  /* Maintain 2 columns on even smaller screens to keep 6 cards in one view */
+  .hero-title { font-size: 1.6rem; }
+  .card-image { height: 100%; }
 }
 
 </style>
