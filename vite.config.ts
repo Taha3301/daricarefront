@@ -5,6 +5,9 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   base: './',
   plugins: [vue()],
+  build: {
+    cssCodeSplit: true,
+  },
   server: {
     host: true,
     proxy: {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import logo from '../../assets/LOGO H.png';
 
-const props = defineProps({
+defineProps({
   activeTab: {
     type: String,
     required: true
