@@ -48,7 +48,7 @@ onUnmounted(() => {
     <div class="navbar-container">
       <!-- Logo at Left -->
       <div class="navbar-brand" @click="handleNavigate('landing')">
-        <img src="../assets/LOGO H.png" alt="daricare logo" class="brand-logo" />
+        <img src="../assets/LOGO H.png" alt="daricare logo" class="brand-logo" width="160" height="42" />
       </div>
 
       <!-- Desktop Menu (Hidden on Mobile) -->
@@ -343,7 +343,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  color: #64748b;
+  color: #475569; /* Improved from #64748b */
   background: none;
   border: none;
   cursor: pointer;

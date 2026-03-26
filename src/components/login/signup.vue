@@ -56,7 +56,10 @@ const handleSignup = async () => {
     console.log('Signup successful:', data);
     
     // Store user_id and token if returned
-    storage.clear(); // Clear existing to avoid mixups
+    // Clear existing auth-related storage but keep fcm_token
+    const fcmTokenToKeep = storage.getItem('fcm_token');
+    storage.clear(); 
+    if (fcmTokenToKeep) storage.setItem('fcm_token', fcmTokenToKeep);
     
     const userId = data.id || (data.user && data.user.id);
     if (userId) {

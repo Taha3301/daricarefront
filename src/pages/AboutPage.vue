@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useLanguage } from '../composables/useLanguage';
+import Footer from '../components/Footer.vue';
 import bgImage from '../assets/propos.jpg';
+
+const emit = defineEmits(['navigate']);
 
 const { t, isAr } = useLanguage();
 const isVisible = ref(false);
@@ -98,6 +101,8 @@ onMounted(() => {
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
     </div>
+    
+    <Footer @navigate="(view: string, sId?: number, snId?: number) => emit('navigate', view, sId, snId)" />
   </div>
 </template>
 

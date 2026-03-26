@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useLanguage } from '../composables/useLanguage';
 import { getApiUrl } from '../config/api';
+import Footer from '../components/Footer.vue';
 import bgImage from '../assets/bg1.jpg';
 
 const emit = defineEmits(['navigate']);
@@ -242,6 +243,7 @@ const submitAvis = async () => {
         </div>
       </section>
     </div>
+    <Footer @navigate="(view: string, sId?: number, snId?: number) => emit('navigate', view, sId, snId)" />
   </div>
 </template>
 

@@ -1,6 +1,29 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue';
 import { useLanguage } from '../composables/useLanguage';
-const { t } = useLanguage();
+import { getApiUrl } from '../config/api';
+
+const { t, isAr } = useLanguage();
+const services = ref<any[]>([]);
+
+const fetchServices = async () => {
+  try {
+    const response = await fetch(getApiUrl('/services/only'));
+    if (response.ok) {
+      services.value = await response.json();
+    }
+  } catch (err) {
+    console.error('Footer: Failed to fetch services:', err);
+  }
+};
+
+const emit = defineEmits(['navigate']);
+
+const handleNavigate = (page: string, serviceId?: number) => {
+  emit('navigate', page, serviceId);
+};
+
+onMounted(fetchServices);
 </script>
 
 <template>
@@ -28,19 +51,20 @@ const { t } = useLanguage();
         <div class="link-group">
           <h3>{{ t.footer_nav_title }}</h3>
           <ul>
-            <li><a href="#">{{ t.footer_nav_home }}</a></li>
-            <li><a href="#">{{ t.footer_nav_services }}</a></li>
-            <li><a href="#">{{ t.footer_nav_about }}</a></li>
-            <li><a href="#">{{ t.footer_nav_contact }}</a></li>
+            <li><a href="#" @click.prevent="handleNavigate('landing')">{{ t.footer_nav_home }}</a></li>
+            <li><a href="#" @click.prevent="handleNavigate('service-selection')">{{ t.footer_nav_services }}</a></li>
+            <li><a href="#" @click.prevent="handleNavigate('about')">{{ t.footer_nav_about }}</a></li>
+            <li><a href="#" @click.prevent="handleNavigate('help')">{{ t.footer_nav_contact }}</a></li>
           </ul>
         </div>
         <div class="link-group">
           <h3>{{ t.footer_services_title }}</h3>
           <ul>
-            <li><a href="#">{{ t.footer_svc1 }}</a></li>
-            <li><a href="#">{{ t.footer_svc2 }}</a></li>
-            <li><a href="#">{{ t.footer_svc3 }}</a></li>
-            <li><a href="#">{{ t.footer_svc4 }}</a></li>
+            <li v-for="svc in services.slice(0, 6)" :key="svc.id">
+              <a href="#" @click.prevent="handleNavigate('service-soins', svc.id)">
+                {{ isAr && svc.name_ar ? svc.name_ar : svc.name }}
+              </a>
+            </li>
           </ul>
         </div>
         <div class="link-group">
@@ -123,8 +147,8 @@ const { t } = useLanguage();
 
 .footer-links {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
+  grid-template-columns: auto 1fr auto;
+  gap: 3rem;
 }
 
 .link-group h3 {
@@ -133,6 +157,7 @@ const { t } = useLanguage();
   font-weight: 600;
   margin-bottom: 1.5rem;
   color: #fff;
+  white-space: nowrap;
 }
 
 .link-group ul {
@@ -148,6 +173,7 @@ const { t } = useLanguage();
   color: #94a3b8;
   text-decoration: none;
   transition: color 0.3s ease;
+  white-space: nowrap;
 }
 
 .link-group a:hover {

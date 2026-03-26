@@ -72,7 +72,22 @@ const allDemands = computed(() => {
 
   let filtered = combined;
   if (allDemandsFilter.value !== 'all') {
-    filtered = filtered.filter(r => r.displayStatus === allDemandsFilter.value);
+    filtered = filtered.filter(r => {
+      const ds = r.displayStatus?.toLowerCase();
+      const filter = allDemandsFilter.value.toLowerCase();
+      
+      if (filter === 'accepted') {
+        // 'accepted' filter should include 'done' and 'validated' for UX consistency
+        return ds === 'accepted' || ds === 'done' || ds === 'validated';
+      }
+      
+      if (filter === 'denied') {
+        // Handle common variations of "denied"
+        return ds === 'denied' || ds === 'refused' || ds === 'rejected';
+      }
+
+      return ds === filter;
+    });
   }
 
   // Use the all_history specific filters
@@ -503,7 +518,8 @@ const fetchInitialData = async () => {
         }
       });
       if (assignRes.ok) {
-        myAssignments = await assignRes.json();
+        const assignData = await assignRes.json();
+        myAssignments = Array.isArray(assignData) ? assignData : (assignData.data || []);
         console.log('📊 My Assignments:', myAssignments);
       }
     }
@@ -517,20 +533,25 @@ const fetchInitialData = async () => {
     });
 
     if (response.ok) {
-      const allBookings: any[] = await response.json();
+      const allBookingsData = await response.json();
+      const allBookings: any[] = Array.isArray(allBookingsData) ? allBookingsData : (allBookingsData.data || []);
       console.log('📦 All Bookings fetched:', allBookings);
       
       // Pending requests: Global status 'pending' or 'en attente' AND no HANDLED interaction from this professional yet
       activeRequests.value = allBookings.filter(b => {
-        const isGlobalPending = b.status === 'pending' || b.status === 'en attente';
+        const bStatus = (b.status || '').toLowerCase();
+        const isGlobalPending = bStatus === 'pending' || bStatus === 'en attente';
         if (!isGlobalPending) return false;
 
-        const isRightSpeciality = b.service && b.service.name === userSpeciality.value;
+        const bServiceName = (b.service?.name || '').toLowerCase();
+        const mySpec = (userSpeciality.value || '').toLowerCase();
+        const isRightSpeciality = bServiceName === mySpec;
         if (!isRightSpeciality) return false;
 
         const myAssign = myAssignments.find(a => a.medicalRequestId === b.id);
         // If no assignment or if the person-specific assignment is still pending
-        return !myAssign || (myAssign.status === 'pending' || myAssign.status === 'en attente');
+        const assignStatus = (myAssign?.status || '').toLowerCase();
+        return !myAssign || (assignStatus === 'pending' || assignStatus === 'en attente');
       });
       
       // History: Handled assignments (accepted/denied/validated/etc)

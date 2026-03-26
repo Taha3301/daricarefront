@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, nextTick, onActivated } from 'vue';
+import { computed, onMounted, ref, nextTick, onActivated, watch } from 'vue';
 import { getApiUrl } from '../config/api';
 import LegalModal from './LegalModal.vue';
 import { useLanguage } from '../composables/useLanguage';
@@ -266,6 +266,13 @@ const initAnswersForSoin = (soin: Soin): Record<FieldKey, string | string[]> => 
   return a;
 };
 
+const hasQuestions = (soin: Soin) => {
+  return (soin.checkboxes?.length ?? 0) > 0 ||
+         (soin.radios?.length ?? 0) > 0 ||
+         (soin.dropdowns?.length ?? 0) > 0 ||
+         (soin.texts?.length ?? 0) > 0;
+};
+
 const activeSoin = computed(() => {
   if (activeSoinId.value == null) return null;
   return soins.value.find((s) => s.id === activeSoinId.value) ?? null;
@@ -297,21 +304,7 @@ const fetchServices = async () => {
       console.warn('⚠️ Service not found for ID:', props.serviceId);
     }
 
-    // Auto-open soin if navigated directly from search
-    if (props.initialSoinId) {
-      await nextTick();
-      const soin = soins.value.find(s => s.id === props.initialSoinId);
-      if (soin) {
-        openSoinForm(soin.id);
-      }
-    } else if ((props.serviceId === 3 || props.serviceId === 2) && soins.value.length > 0) {
-      // Auto-open first soin for Ambulance (3) and Medical Equipment (2)
-      await nextTick();
-      const firstSoin = soins.value[0];
-      if (firstSoin) {
-        openSoinForm(firstSoin.id);
-      }
-    }
+    await handleAutoOpen();
   } catch (err: any) {
     console.error('Failed to fetch services:', err);
     errorMsg.value = err?.message || 'Impossible de charger les services.';
@@ -331,6 +324,55 @@ const openSoinForm = (soinId: number) => {
     answers.value = initAnswersForSoin(soin);
   }
   isModalOpen.value = true;
+};
+
+const handleAutoOpen = async () => {
+  if (!services.value.length) return;
+  await nextTick();
+
+  // Auto-open soin if navigated directly from search or initialSoinId provided
+  if (props.initialSoinId) {
+    const soin = soins.value.find(s => s.id === props.initialSoinId);
+    if (soin) {
+      if (hasQuestions(soin)) {
+        openSoinForm(soin.id);
+      } else {
+        // Just toggle it on if no questions
+        if (!isSoinSaved(soin.id)) {
+          const initialAnswers = initAnswersForSoin(soin);
+          saved.value.push({ soinId: soin.id, answers: initialAnswers });
+          emit('save', { serviceId: props.serviceId, soinId: soin.id, answers: initialAnswers });
+        }
+      }
+    }
+  } else if (soins.value.length === 1 || props.serviceId === 3 || props.serviceId === 2) {
+    // Auto-open first soin if only one exists or for specific services
+    const firstSoin = soins.value[0];
+    if (firstSoin) {
+      openSoinForm(firstSoin.id);
+    }
+  }
+};
+
+// Handle prop changes (for KeepAlive component reuse)
+watch(() => [props.serviceId, props.initialSoinId], () => {
+  handleAutoOpen();
+});
+
+const handleSoinClick = (soin: Soin) => {
+  if (hasQuestions(soin)) {
+    openSoinForm(soin.id);
+  } else {
+    // Toggle logic for soins without questions
+    const isSaved = isSoinSaved(soin.id);
+    if (isSaved) {
+      saved.value = saved.value.filter(s => s.soinId !== soin.id);
+    } else {
+      const initialAnswers = initAnswersForSoin(soin);
+      saved.value.push({ soinId: soin.id, answers: initialAnswers });
+      emit('save', { serviceId: props.serviceId, soinId: soin.id, answers: initialAnswers });
+    }
+  }
 };
 
 const closeModal = () => {
@@ -775,7 +817,7 @@ onMounted(() => {
               :key="soin.id"
               class="soin-card"
               :class="{ saved: isSoinSaved(soin.id) }"
-              @click="openSoinForm(soin.id)"
+              @click="handleSoinClick(soin)"
             >
               <div class="soin-header">
                 <div class="soin-name" :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && soin.name_ar ? soin.name_ar : soin.name }}</div>
@@ -788,7 +830,8 @@ onMounted(() => {
               <div class="soin-desc" :dir="isAr ? 'rtl' : 'ltr'">{{ (isAr && soin.description_ar ? soin.description_ar : soin.description) || '—' }}</div>
               <div class="soin-cta">
                 <span v-if="isSoinSaved(soin.id)">{{ tx('Déjà ajouté', 'تمت الإضافة') }}</span>
-                <span v-else>{{ tx('Remplir le formulaire', 'ملء النموذج') }}</span>
+                <span v-else-if="hasQuestions(soin)">{{ tx('Remplir le formulaire', 'ملء النموذج') }}</span>
+                <span v-else>{{ tx('Ajouter au panier', 'إضافة للسلة') }}</span>
               </div>
             </button>
           </div>

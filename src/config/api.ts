@@ -17,6 +17,11 @@ export const SOCKET_URL = API_BASE_URL;
  * @returns Full API URL
  */
 export function getApiUrl(endpoint: string): string {
+    // If it's already an absolute URL (like Cloudinary), return it as-is
+    if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+        return endpoint;
+    }
+
     // Remove leading slash if present to avoid double slashes
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint
 
@@ -29,6 +34,11 @@ export function getApiUrl(endpoint: string): string {
  * @returns Full upload URL
  */
 export function getUploadUrl(path: string): string {
+    // If it's already an absolute URL, return it as-is
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+        return path;
+    }
+
     // Remove leading slash if present
     const cleanPath = path.startsWith('/') ? path.slice(1) : path
 

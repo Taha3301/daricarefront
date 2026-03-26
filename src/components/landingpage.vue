@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, onUnmounted, computed } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { getApiUrl } from '../config/api';
 import Footer from './Footer.vue';
 import { useLanguage } from '../composables/useLanguage';
@@ -116,12 +116,16 @@ const sortedServices = computed(() => {
   return [...normal, ...deferred];
 });
 
+const optimizeCloudinary = (url: string | null | undefined, width = 600) => {
+  if (!url) return '';
+  if (url.includes('res.cloudinary.com')) {
+    return url.replace('/upload/', `/upload/w_${width},c_fill,g_auto,f_auto,q_auto/`);
+  }
+  return url;
+};
+
 onMounted(() => {
   fetchServices();
-});
-
-onUnmounted(() => {
-  // cleanup if any
 });
 </script>
 
@@ -181,6 +185,7 @@ onUnmounted(() => {
         </div>
 
         <div class="services-wrapper">
+          <h2 class="visually-hidden">Nos Services</h2>
           <div v-if="isLoading" class="loader-wrap">
             <div class="spinner"></div>
             <p>{{ t.loading_services }}</p>
@@ -190,17 +195,23 @@ onUnmounted(() => {
           
           <div v-else class="services-grid" :class="{ 'is-rtl': isAr }">
             <div 
-              v-for="service in sortedServices.slice(0, 6)" 
+              v-for="(service, index) in sortedServices.slice(0, 12)" 
               :key="service.id" 
               class="service-card"
               @click="emit('navigate', 'service-soins', service.id)"
             >
-              <div 
-                class="card-image" 
-                :style="{ backgroundImage: service.image ? `url('${service.image}')` : 'none' }"
-                role="img"
-                :aria-label="isAr && service.name_ar ? service.name_ar : service.name"
-              ></div>
+              <div class="card-image-wrap">
+                <img 
+                  v-if="service.image"
+                  :src="optimizeCloudinary(service.image, 600)" 
+                  :alt="isAr && service.name_ar ? service.name_ar : service.name"
+                  class="card-image"
+                  :loading="index < 4 ? 'eager' : 'lazy'"
+                  :fetchpriority="index < 2 ? 'high' : 'auto'"
+                  width="400"
+                  height="200"
+                />
+              </div>
               <div class="card-shimmer"></div>
               <div class="card-overlay"></div>
               <div class="card-content">
@@ -261,7 +272,7 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <Footer />
+    <Footer @navigate="(view: string, sId?: number, snId?: number) => emit('navigate', view, sId, snId)" />
   </div>
 </template>
 
@@ -272,6 +283,19 @@ onUnmounted(() => {
   /* overflow: hidden; Removed to allow scrolling */
   position: relative;
   background: #f8fafc;
+}
+
+/* Utility */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Premium Hero Section */
@@ -581,13 +605,18 @@ onUnmounted(() => {
   -webkit-transform: translateZ(0);
 }
 
-.card-image {
+.card-image-wrap {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 0;
+  overflow: hidden;
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .service-card:hover .card-image {
@@ -803,7 +832,7 @@ onUnmounted(() => {
 }
 
 .feature-card p {
-  color: #64748b;
+  color: #475569; /* Improved contrast from #64748b */
   line-height: 1.6;
   font-size: 0.95rem;
 }
@@ -945,7 +974,7 @@ onUnmounted(() => {
     display: -webkit-box;
     -webkit-line-clamp: 1; /* Limit to 1 line on mobile to avoid overlap */
     line-clamp: 1;
-    color: rgba(255, 255, 255, 0.9);
+    color: #f8fafc; /* Improved contrast for overlay text */
   }
 
   .card-icon {

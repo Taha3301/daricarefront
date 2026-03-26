@@ -259,6 +259,38 @@ const toggleDocumentVerification = async (docId: number, verified: boolean) => {
   }
 };
 
+const validateAllDocuments = async (proId: number) => {
+  const token = storage.getItem('access_token');
+  if (!token) return;
+
+  try {
+    isLoading.value = true;
+    const response = await fetch(getApiUrl(`/documents/professional/${proId}/verify`), {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'accept': '*/*'
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      successMessage.value = data.message || 'Professionnel validé avec succès.';
+      selectedPro.value = null;
+      await fetchProfessionals();
+      setTimeout(() => successMessage.value = '', 3000);
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Échec de la validation groupée.');
+    }
+  } catch (err: any) {
+    console.error('Validate all error:', err);
+    errorMessage.value = err.message;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 const updateProfessionalStatus = async (proId: number, status: string) => {
   const token = storage.getItem('access_token');
   if (!token) return;
@@ -616,9 +648,9 @@ const isImage = (path: string) => {
 
         <footer class="modal-footer">
           <div class="verify-actions">
-            <button class="btn-reject" @click="updateProfessionalStatus(selectedPro.id, 'REJECTED')">Rejeter</button>
-            <button class="btn-validate" @click="updateProfessionalStatus(selectedPro.id, 'VALIDATED')" :disabled="!selectedPro.documents.every((d: any) => d.verified)">
-                Valider le profil
+            <button class="btn-reject" @click="updateProfessionalStatus(selectedPro.id, 'REJECTED')" :disabled="isLoading">Rejeter</button>
+            <button class="btn-validate" @click="validateAllDocuments(selectedPro.id)" :disabled="isLoading || !selectedPro.documents.every((d: any) => d.verified)">
+                {{ isLoading ? 'Action en cours...' : 'Valider le profil' }}
             </button>
           </div>
           <p v-if="!selectedPro.documents.every((d: any) => d.verified)" class="validation-hint">
@@ -1031,20 +1063,62 @@ const isImage = (path: string) => {
 }
 .document-card:hover .view-doc-link { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+.document-card .doc-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.doc-type {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.1em;
+}
+
 .doc-info { padding: 1.5rem; }
 .btn-verify-doc { 
-  width: 100%; padding: 0.75rem; background: #2563eb; color: white; border: none; 
-  border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; 
+  border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  font-size: 0.75rem;
 }
-.btn-verify-doc:hover { background: #1d4d82; }
 
 .doc-verified-badge { 
-  width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; 
+  display: flex; align-items: center; justify-content: center; gap: 0.35rem; 
   color: #69aa62; font-weight: 800; background: #f0fdf4; 
-  padding: 0.75rem; border-radius: 12px; border: 1px solid #d1fae5;
+  padding: 0.5rem 0.85rem; border-radius: 10px; border: 1px solid #d1fae5;
+  font-size: 0.75rem;
 }
 
-.doc-desc { font-size: 0.875rem; color: #64748b; line-height: 1.5; margin-top: 1rem; height: 2.6rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+.btn-unverify-doc {
+  background: white;
+  border: 1px solid #fee2e2;
+  color: #ef4444;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-unverify-doc:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.verified-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.doc-desc { font-size: 0.875rem; color: #64748b; line-height: 1.5; height: 2.6rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 
 .modal-footer { padding: 1.5rem 2.5rem; background: #ffffff; border-top: 1px solid #f1f5f9; flex-shrink: 0; }
 .verify-actions { display: flex; gap: 1.5rem; justify-content: flex-end; }

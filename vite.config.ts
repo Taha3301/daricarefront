@@ -7,6 +7,13 @@ export default defineConfig({
   plugins: [vue()],
   build: {
     cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['vue'],
+        }
+      }
+    }
   },
   server: {
     host: true,

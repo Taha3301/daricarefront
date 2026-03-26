@@ -661,20 +661,21 @@ const confirmResetPassword = async () => {
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 768px) {
   .form-grid {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
-  }
-  
-  .form-group.full-width {
-    grid-column: span 1;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
   }
 }
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
 
 .loading-profile {
   display: flex;

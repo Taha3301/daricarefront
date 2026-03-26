@@ -53,6 +53,7 @@ const selectedService = ref('')
 const selectedServiceId = ref<number | null>(null)
 const selectedSoinId = ref<number | null>(null)
 const showLangPopup = ref(false)
+const sessionKey = ref(Date.now())
 
 interface MedicalRequest {
   id: number;
@@ -109,6 +110,9 @@ onMounted(() => {
     } else if (role === 'professional') {
       currentView.value = 'pro';
     }
+    
+    // Ensure FCM token is synced if already logged in
+    PushNotificationService.saveTokenToBackend();
   }
 });
 
@@ -132,6 +136,10 @@ const handleNewRequest = (data: any) => {
 
 const handleNavigation = (view: string, serviceId?: number, soinId?: number) => {
   currentView.value = view;
+  // Reset session key when returning to public entrance pages (effectively clearing KeepAlive cache)
+  if (view === 'login' || view === 'landing' || view === 'signup') {
+    sessionKey.value = Date.now();
+  }
   if (serviceId != null) selectedServiceId.value = serviceId;
   if (soinId != null) selectedSoinId.value = soinId;
   else if (view !== 'service-soins') selectedSoinId.value = null;
@@ -192,7 +200,7 @@ const currentViewProps = computed(() => {
         <div class="lang-popup">
           <!-- Logo -->
           <div class="popup-logo">
-            <img src="./assets/LOGO H.png" alt="DariCare" />
+            <img src="./assets/LOGO H.png" alt="DariCare" width="180" height="48" />
           </div>
 
           <h2 class="popup-title">
@@ -232,6 +240,7 @@ const currentViewProps = computed(() => {
       <KeepAlive :max="5">
         <component 
           :is="currentViewComponent" 
+          :key="currentView + sessionKey"
           v-bind="currentViewProps"
           @navigate="handleNavigation"
           @submit="handleNewRequest"

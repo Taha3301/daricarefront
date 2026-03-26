@@ -22,26 +22,24 @@ const isAlreadySubmitted = computed(() => {
 });
 
 const unverifiedAlertDocs = computed(() => {
-  // Aggregate all unverified documents mentionned in all alerts
-  const allAlertDocs = alerts.value.flatMap((a: any) => a.documents || []);
-  // Filter for unique documents that remain unverified based on existingDocs state
+  // Aggregate all documents from alerts that are NOT resolved (update === false)
+  const activeAlerts = alerts.value.filter((a: any) => a.update === false);
+  const allAlertDocs = activeAlerts.flatMap((a: any) => a.documents || []);
+  
+  // Create a unique set of docs to avoid duplicates
   const uniqueDocsMap = new Map();
   allAlertDocs.forEach((doc: any) => {
-    const currentDoc = existingDocs.value.find((d: any) => d.id === doc.id);
-    if (currentDoc && !currentDoc.verified) {
-      uniqueDocsMap.set(doc.id, { ...doc, verified: false });
-    }
+    // We prioritize the doc state from the alert itself
+    uniqueDocsMap.set(doc.id, { ...doc });
   });
+  
   return Array.from(uniqueDocsMap.values());
 });
 
 const activeAlertComments = computed(() => {
-  // Get comments from alerts that still have unverified documents
+  // Get comments from all alerts that are NOT resolved
   return alerts.value
-    .filter((a: any) => a.update === false || (a.documents && a.documents.some((d: any) => {
-      const currentDoc = existingDocs.value.find((ed: any) => ed.id === d.id);
-      return currentDoc && !currentDoc.verified;
-    })))
+    .filter((a: any) => a.update === false)
     .map((a: any) => a.comment);
 });
 
@@ -182,6 +180,11 @@ const fetchServices = async () => {
   }
 };
 
+const truncateText = (text: string, length: number = 40) => {
+  if (!text) return '';
+  return text.length > length ? text.substring(0, length) + '...' : text;
+};
+
 const fetchAlerts = async (proId: string) => {
   const token = localStorage.getItem('access_token');
   if (!token) return;
@@ -203,10 +206,14 @@ const fetchAlerts = async (proId: string) => {
 };
 
 const checkStepProgress = () => {
-  if (unverifiedAlertDocs.value.length > 0) {
+  // Direct redirection to step 3 if there are unresolved alerts
+  const hasActiveAlerts = alerts.value.some((a: any) => a.update === false);
+  if (hasActiveAlerts || unverifiedAlertDocs.value.length > 0) {
     step.value = 3;
+    console.log('Redirecting to alert resolution (Step 3)');
   } else {
     step.value = 1;
+    console.log('Staying/Redirecting to initial form (Step 1)');
   }
 };
 
@@ -486,7 +493,7 @@ const submitDocuments = async () => {
                 <select v-model="formData.specialty">
                   <option value="" disabled>Sélectionnez votre spécialité</option>
                   <option v-for="service in services" :key="service.id" :value="service.name">
-                    {{ service.name }}
+                    {{ truncateText(service.name, 35) }}
                   </option>
                 </select>
               </div>
@@ -651,6 +658,7 @@ const submitDocuments = async () => {
 .verification-wrapper {
   min-height: 100vh;
   width: 100%;
+  overflow-x: hidden;
   background-color: #f8fafc;
   background-image: 
     radial-gradient(at 0% 0%, rgba(43, 105, 173, 0.05) 0, transparent 50%), 
@@ -693,7 +701,7 @@ const submitDocuments = async () => {
 
 .header {
   text-align: center;
-  margin-bottom: 4rem;
+  margin-bottom: clamp(2rem, 5vw, 4rem);
 }
 
 .brand {
@@ -707,16 +715,17 @@ const submitDocuments = async () => {
 }
 
 .header h1 {
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
   font-weight: 800;
   color: #0f172a;
   margin-bottom: 0.75rem;
   letter-spacing: -0.04em;
+  line-height: 1.2;
 }
 
 .header p {
   color: #64748b;
-  font-size: 1.125rem;
+  font-size: clamp(0.9rem, 2vw, 1.125rem);
   max-width: 500px;
   margin: 0 auto;
   line-height: 1.6;
@@ -741,16 +750,24 @@ const submitDocuments = async () => {
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
 }
 
 .full-width {
-  grid-column: span 2;
+  grid-column: 1 / -1;
 }
 
 .form-grid > * {
   min-width: 0;
+  width: 100%;
 }
 
 /* Input Styling */
@@ -759,6 +776,7 @@ const submitDocuments = async () => {
   flex-direction: column;
   gap: 0.625rem;
   width: 100%;
+  min-width: 0; /* Critical for grid children to shrink */
 }
 
 .input-group label {
@@ -772,14 +790,26 @@ const submitDocuments = async () => {
 .doc-desc-input {
   width: 100%;
   display: block;
-  padding: 1rem 1.25rem;
+  padding: 0.8rem 1rem;
   border: 2px solid #e2e8f0;
-  border-radius: 16px;
+  border-radius: 14px;
   background: white;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #0f172a;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.input-group select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%232b69ad' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.25rem;
+  padding-right: 2.5rem;
 }
 
 .input-group input:hover, 
@@ -938,19 +968,51 @@ const submitDocuments = async () => {
 }
 
 /* Responsive Tweak */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  .verification-wrapper {
+    padding: 1rem 0.5rem;
+  }
+
   .verification-card {
-    padding: 2.5rem 1.5rem;
-    border-radius: 24px;
+    padding: 1.5rem 0.875rem;
+    border-radius: 20px;
   }
   
-  .form-grid {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
+  .form-section {
+    margin-bottom: 2rem;
+  }
+
+  .form-section h3 {
+    font-size: 1.15rem;
+    margin-bottom: 1.25rem;
   }
   
-  .header h1 {
-    font-size: 1.75rem;
+  .input-group label {
+    font-size: 0.85rem;
+  }
+  
+  .input-group input, 
+  .input-group select,
+  .doc-desc-input {
+    padding: 0.7rem 0.875rem;
+    font-size: 0.9rem;
+    border-radius: 12px;
+  }
+  
+  .input-group select {
+    padding-right: 2rem;
+    background-size: 1.1rem;
+    background-position: right 0.5rem center;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    margin-bottom: 2.5rem;
+  }
+  
+  .brand-logo-img {
+    height: 50px;
   }
 }
 
@@ -980,18 +1042,20 @@ const submitDocuments = async () => {
 .resolve-item {
   background: white;
   border: 2px solid #f1f5f9;
-  padding: 2rem;
+  padding: 1.75rem;
   border-radius: 24px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   transition: all 0.3s ease;
+  margin-bottom: 1rem;
 }
 
 @media (min-width: 640px) {
   .resolve-item {
     flex-direction: row;
     align-items: center;
+    justify-content: space-between;
   }
 }
 
@@ -999,5 +1063,219 @@ const submitDocuments = async () => {
   border-color: #2b69ad;
   box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
+
+.alert-resolution-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.alert-icon-large {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+.alert-resolution-header h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+}
+
+.alert-resolution-header p {
+  color: #64748b;
+  font-size: 1.1rem;
+}
+
+.admin-comments-box {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  padding: 2rem;
+  border-radius: 24px;
+  margin-bottom: 3rem;
+}
+
+.admin-comments-box label {
+  display: block;
+  font-weight: 800;
+  color: #c2410c;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.25rem;
+}
+
+.comment-item {
+  font-size: 1.125rem;
+  color: #7c2d12;
+  font-weight: 600;
+  line-height: 1.6;
+  font-style: italic;
+  padding-left: 1.5rem;
+  border-left: 4px solid #f97316;
+}
+
+.resolution-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 3rem;
+}
+
+.resolve-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.resolve-doc-type {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #2b69ad;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.resolve-reason {
+  font-size: 1rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.resolve-upload {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.update-success-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f0fdf4;
+  color: #166534;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.file-drop-mini {
+  position: relative;
+  border: 2px dashed #e2e8f0;
+  border-radius: 16px;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.file-drop-mini:hover {
+  border-color: #2b69ad;
+  background: #f0f9ff;
+}
+
+.file-drop-mini.success {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.file-drop-mini.isUpdating {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.file-drop-mini input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.drop-content-mini {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.resolution-info-banner {
+  background: #f1f5f9;
+  padding: 1.25rem;
+  border-radius: 16px;
+  text-align: center;
+  color: #475569;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+.resolution-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .resolution-actions {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+.btn-back {
+  padding: 1.125rem 2rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 18px;
+  color: #64748b;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-back:hover {
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+
+.alert-action-banner {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fed7aa;
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.alert-action-banner:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(249, 115, 22, 0.1);
+}
+
+.banner-icon { font-size: 2rem; }
+.banner-content { flex: 1; }
+.banner-title { font-weight: 800; color: #9a3412; font-size: 1.1rem; margin: 0; }
+.banner-desc { color: #c2410c; margin: 0.25rem 0 0 0; font-size: 0.9rem; font-weight: 500; }
+
+.banner-btn {
+  background: #f97316;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.banner-btn:hover { background: #ea580c; }
 
 </style>

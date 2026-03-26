@@ -56,8 +56,18 @@ export class PushNotificationService {
     });
 
     // Register with Apple / Google to receive tokens
-    console.log('[PushService] Calling PushNotifications.register()...');
-    await PushNotifications.register();
+    try {
+      console.log('[PushService] Calling PushNotifications.register()...');
+      await PushNotifications.register();
+    } catch (err) {
+      console.error('[PushService] Registration FAILED:', err);
+    }
+  }
+
+  static async register() {
+    if (Capacitor.getPlatform() !== 'web') {
+      await PushNotifications.register();
+    }
   }
 
   static async saveTokenToBackend(token?: string) {
@@ -70,7 +80,10 @@ export class PushNotificationService {
     });
 
     if (!fcmToken || !accessToken) {
-      console.warn('[PushService] Cannot sync token: fcmToken or accessToken missing');
+      console.warn('[PushService] Cannot sync token: fcmToken or accessToken missing', {
+        fcmToken: !!fcmToken,
+        accessToken: !!accessToken
+      });
       return;
     }
 

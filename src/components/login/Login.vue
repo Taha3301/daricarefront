@@ -46,8 +46,10 @@ const handleLogin = async () => {
     const data = await response.json();
     console.log('Login successful:', data);
 
-    // Store token and user info
-    storage.clear(); // Clear existing to avoid mixups
+    // Clear existing auth-related storage to avoid mixups, but keep fcm_token
+    const fcmTokenToKeep = storage.getItem('fcm_token');
+    storage.clear(); 
+    if (fcmTokenToKeep) storage.setItem('fcm_token', fcmTokenToKeep);
 
     storage.setItem('access_token', data.access_token, rememberMe.value);
 
