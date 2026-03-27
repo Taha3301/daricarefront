@@ -1006,10 +1006,10 @@ onMounted(() => {
 
   .feature-card {
     padding: 1.75rem 1.25rem;
-    text-align: left;
+    text-align: center;
     display: flex;
-    flex-direction: row;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
     gap: 1.25rem;
   }
 
@@ -1017,7 +1017,7 @@ onMounted(() => {
     width: 48px;
     height: 48px;
     flex-shrink: 0;
-    margin: 0;
+    margin: 0 auto 0.5rem;
   }
 
   .feature-card h3 {

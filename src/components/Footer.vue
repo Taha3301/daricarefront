@@ -35,14 +35,8 @@ onMounted(fetchServices);
           {{ t.footer_desc }}
         </p>
         <div class="social-links">
-          <a href="#" class="social-link" aria-label="Facebook">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-          </a>
-          <a href="#" class="social-link" aria-label="Instagram">
+          <a href="https://www.instagram.com/proof.agency1/" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="Instagram">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-          </a>
-          <a href="#" class="social-link" aria-label="Twitter">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg>
           </a>
         </div>
       </div>
@@ -90,7 +84,7 @@ onMounted(fetchServices);
 
 <style scoped>
 .footer {
-  background: #0f172a;
+  background: var(--secondary-color, #69aa62);
   color: #f8fafc;
   padding: 4rem 2rem 1.5rem;
   margin-top: auto;
@@ -118,7 +112,7 @@ onMounted(fetchServices);
 }
 
 .footer-desc {
-  color: #94a3b8;
+  color: #f8fafc;
   line-height: 1.6;
   max-width: 400px;
 }
@@ -135,13 +129,13 @@ onMounted(fetchServices);
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
   transition: all 0.3s ease;
 }
 
 .social-link:hover {
-  background: #3b82f6;
+  background: rgba(255, 255, 255, 0.3);
   transform: translateY(-3px);
 }
 
@@ -156,7 +150,7 @@ onMounted(fetchServices);
   font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 1.5rem;
-  color: #fff;
+  color: #ffffff;
   white-space: nowrap;
 }
 
@@ -170,28 +164,28 @@ onMounted(fetchServices);
 }
 
 .link-group a {
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
   transition: color 0.3s ease;
   white-space: nowrap;
 }
 
 .link-group a:hover {
-  color: #3b82f6;
+  color: #ffffff;
 }
 
 .contact-info li {
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .footer-bottom {
   text-align: center;
   padding-top: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  color: #64748b;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
 }
 
@@ -204,9 +198,44 @@ onMounted(fetchServices);
 }
 
 @media (max-width: 600px) {
+  .footer {
+    padding: 3rem 1.5rem 2rem;
+  }
+  .footer-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    width: 100%;
+    max-width: 100%;
+  }
+  .footer-brand {
+    align-items: flex-start;
+    text-align: left;
+    width: 100%;
+  }
+  .footer-desc {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+  }
   .footer-links {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 2rem;
+    width: 100%;
+  }
+  .link-group h3 {
+    white-space: normal;
+  }
+  .link-group a, 
+  .contact-info li {
+    white-space: normal;
+    word-break: break-word;
+  }
+  .footer-bottom {
+    margin-top: 1rem;
+    padding-top: 1.5rem;
   }
 }
 </style>

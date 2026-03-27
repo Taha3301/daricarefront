@@ -236,12 +236,13 @@ const submitForm = async () => {
   font-weight: 800;
   color: #1e293b;
   margin-bottom: 1rem;
-  letter-spacing: -2px;
-  line-height: 1.1;
+  letter-spacing: -1.5px;
+  line-height: 1.2;
+  word-break: break-word;
 }
 
 .page-subtitle {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   color: #64748b;
   max-width: 600px;
   line-height: 1.6;
@@ -263,6 +264,7 @@ const submitForm = async () => {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  width: 100%;
 }
 
 .input-group label {
@@ -280,6 +282,7 @@ const submitForm = async () => {
   transition: all 0.2s ease;
   font-family: inherit;
   background: #f8fafc;
+  width: 100%;
 }
 
 .styled-input:focus {
@@ -350,19 +353,40 @@ textarea.styled-input {
 
 @media (max-width: 768px) {
   .page-wrapper {
-    padding: 2rem 1.5rem;
+    padding: 6rem 1.25rem 3rem; /* Extra top padding if covered by navbar */
+    justify-content: center;
   }
   .form-container {
     margin-left: 0;
+    max-width: 100%;
+  }
+  .page-header {
+    margin-bottom: 2.5rem;
   }
   .form-row {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
   .page-title {
-    font-size: 2.25rem;
+    font-size: 2.15rem;
+    letter-spacing: -1px;
+    line-height: 1.2;
+  }
+  .page-subtitle {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  .booking-form {
+    gap: 1.5rem;
+  }
+  .styled-input {
+    padding: 1rem;
+    font-size: 1rem;
   }
   .submit-button {
     width: 100%;
+    padding: 1.1rem;
+    font-size: 1.15rem;
   }
 }
 </style>

@@ -139,8 +139,11 @@ const faqs = [
 
 .faq-card {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 1.5rem;
-  padding: 1.5rem;
+  padding: 2rem 1.5rem;
   border-radius: 16px;
   transition: all 0.3s ease;
   border: 1px solid #f1f5f9;
@@ -165,15 +168,17 @@ const faqs = [
 }
 
 .faq-question {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: #1e293b;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .faq-answer {
   color: #64748b;
   line-height: 1.6;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .contact-section {
@@ -185,8 +190,10 @@ const faqs = [
   border-radius: 24px;
   padding: 3rem;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
+  text-align: center;
+  gap: 2rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
   border: 1px solid #f1f5f9;
 }
@@ -204,17 +211,20 @@ const faqs = [
 
 .contact-subtitle {
   color: #64748b;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .contact-details {
   display: flex;
-  gap: 2rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
 }
 
 .contact-item {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
   color: #1e293b;
   font-weight: 600;
@@ -233,13 +243,14 @@ const faqs = [
 .btn-chat {
   background: #2b69ad;
   color: white;
-  padding: 1rem 2rem;
+  padding: 1rem 2.5rem;
   border-radius: 14px;
   font-weight: 700;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(43, 105, 173, 0.2);
@@ -268,16 +279,27 @@ const faqs = [
     font-size: 2.25rem;
   }
   
-  .contact-card {
-    flex-direction: column;
-    text-align: center;
-    gap: 2rem;
+  .faq-card {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding: 1.5rem 1rem !important;
+    gap: 1rem !important;
   }
-  
-  .contact-details {
+
+  .faq-icon {
+    margin: 0 auto;
+  }
+
+  .faq-text {
+    display: flex;
     flex-direction: column;
-    gap: 1rem;
     align-items: center;
+    width: 100%;
+  }
+
+  .faq-question, .faq-answer {
+    text-align: center !important;
   }
 }
 </style>
