@@ -3,6 +3,7 @@ import { ref, onMounted, defineAsyncComponent, defineComponent, h, computed } fr
 import { storage } from './utils/storage'
 import { useLanguage, type Lang } from './composables/useLanguage'
 import Navbar from './components/Navbar.vue'
+import { API_BASE_URL } from './config/api'
 
 // ── Shared Loading / Error shims ─────────────────────────────────────────────
 const AppLoader = defineComponent({
@@ -67,7 +68,25 @@ interface MedicalRequest {
 
 const medicalRequests = ref<MedicalRequest[]>([]);
 
+// ── Heartbeat (Keep-Alive) ───────────────────────────────────────────────────
+/**
+ * Pings the backend every 10 minutes to help keep the Render server awake
+ * while the application is active in a browser tab.
+ */
+const startHeartbeat = () => {
+  // Initial ping
+  fetch(API_BASE_URL).catch(() => {});
+  
+  // Periodic ping every 10 minutes
+  setInterval(() => {
+    console.log(`[Heartbeat] Pinging backend at ${new Date().toLocaleTimeString()}`);
+    fetch(API_BASE_URL).catch(err => console.error('[Heartbeat] Ping failed:', err));
+  }, 10 * 60 * 1000);
+};
+
 onMounted(() => {
+  // Start the heartbeat
+  startHeartbeat();
   // Show language popup if no preference saved yet
   if (!localStorage.getItem('daricare_lang')) {
     showLangPopup.value = true;
