@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Ping Backend
         run: |
-          curl -I https://daricareback.onrender.com
+          curl -I https://daricareback.onrender.com/avis

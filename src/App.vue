@@ -74,13 +74,13 @@ const medicalRequests = ref<MedicalRequest[]>([]);
  * while the application is active in a browser tab.
  */
 const startHeartbeat = () => {
-  // Initial ping
-  fetch(API_BASE_URL).catch(() => {});
+  // Initial ping to a known valid endpoint
+  fetch(`${API_BASE_URL}/avis`).catch(() => {});
   
   // Periodic ping every 10 minutes
   setInterval(() => {
     console.log(`[Heartbeat] Pinging backend at ${new Date().toLocaleTimeString()}`);
-    fetch(API_BASE_URL).catch(err => console.error('[Heartbeat] Ping failed:', err));
+    fetch(`${API_BASE_URL}/avis`).catch(err => console.error('[Heartbeat] Ping failed:', err));
   }, 10 * 60 * 1000);
 };
 
