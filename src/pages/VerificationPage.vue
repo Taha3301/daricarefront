@@ -100,13 +100,10 @@ const handleFileChange = (event: Event, type: keyof typeof files.value) => {
 };
 
 const fetchUserProfile = async () => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   try {
-    const response = await fetch(getApiUrl('/auth/profile'), {
+    const response = await fetch(getApiUrl('/auth/profile'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -137,13 +134,10 @@ const fetchUserProfile = async () => {
 };
 
 const fetchUserDocuments = async (userId: string) => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   try {
-    const response = await fetch(getApiUrl(`/documents/professional/${userId}`), {
+    const response = await fetch(getApiUrl(`/documents/professional/${userId}`), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -165,7 +159,7 @@ const fetchUserDocuments = async (userId: string) => {
 
 const fetchServices = async () => {
   try {
-    const response = await fetch(getApiUrl('/services/only'), {
+    const response = await fetch(getApiUrl('/services/only'), { credentials: 'include', 
       headers: {
         'accept': '*/*'
       }
@@ -186,13 +180,10 @@ const truncateText = (text: string, length: number = 40) => {
 };
 
 const fetchAlerts = async (proId: string) => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   try {
-    const response = await fetch(getApiUrl(`/alerts/professional/${proId}`), {
+    const response = await fetch(getApiUrl(`/alerts/professional/${proId}`), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -221,37 +212,29 @@ onMounted(async () => {
   // Always fetch services for the dropdown, regardless of userId
   fetchServices();
 
-  const token = localStorage.getItem('access_token');
   let userId = localStorage.getItem('user_id');
   
   // If we have a token but no user_id, try to fetch the profile to get the ID
-  if (token) {
-    isLoading.value = true;
-    try {
-      // First, ensure we have the profile (and thus the user_id)
-      await fetchUserProfile();
-      
-      // Re-read userId as it might have been set by fetchUserProfile
-      userId = localStorage.getItem('user_id');
-      
-      if (userId && userId !== 'undefined') {
-        // Now fetch specific data
-        await Promise.all([
-          fetchAlerts(userId),
-          fetchUserDocuments(userId)
-        ]);
-        checkStepProgress();
-      } else {
-        console.warn('Could not identify user even after profile fetch');
-        errorMessage.value = "Impossible d'identifier votre profil. Veuillez vous reconnecter.";
-      }
-    } catch (err) {
-      console.error('Error during initial data fetch:', err);
-    } finally {
-      isLoading.value = false;
+  // With HttpOnly cookies, auth is handled automatically — always try to load profile
+  isLoading.value = true;
+  try {
+    await fetchUserProfile();
+    userId = localStorage.getItem('user_id');
+    
+    if (userId && userId !== 'undefined') {
+      await Promise.all([
+        fetchAlerts(userId),
+        fetchUserDocuments(userId)
+      ]);
+      checkStepProgress();
+    } else {
+      console.warn('Could not identify user even after profile fetch');
+      errorMessage.value = "Impossible d'identifier votre profil. Veuillez vous reconnecter.";
     }
-  } else {
-    errorMessage.value = "Session expirée. Veuillez vous reconnecter.";
+  } catch (err) {
+    console.error('Error during initial data fetch:', err);
+  } finally {
+    isLoading.value = false;
   }
 });
 
@@ -259,10 +242,9 @@ const patchDocument = async (docId: number, file: File) => {
   errorMessage.value = '';
   updatingDocId.value = docId;
   
-  const token = localStorage.getItem('access_token');
   const userId = localStorage.getItem('user_id');
 
-  if (!token || !userId) return;
+  if (!userId) return;
 
   try {
     const patchFormData = new FormData();
@@ -270,11 +252,10 @@ const patchDocument = async (docId: number, file: File) => {
     patchFormData.append('professionalId', userId);
     patchFormData.append('update', 'true');
     
-    const response = await fetch(getApiUrl(`/documents/${docId}`), {
+    const response = await fetch(getApiUrl(`/documents/${docId}`), { credentials: 'include', 
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${token}`
-      },
+},
       body: patchFormData
     });
 
@@ -302,18 +283,15 @@ const finalizeAlertUpdates = async () => {
   const pendingAlerts = alerts.value.filter(a => a.update === false);
   if (pendingAlerts.length === 0) return;
 
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   try {
     isFinalizing.value = true;
     
     // Execute all toggles in parallel
     const togglePromises = pendingAlerts.map(alert => 
-      fetch(getApiUrl(`/alerts/${alert.id}/toggle-update`), {
+      fetch(getApiUrl(`/alerts/${alert.id}/toggle-update`), { credentials: 'include', 
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'accept': '*/*'
         }
@@ -341,10 +319,9 @@ const finalizeAlertUpdates = async () => {
 const submitProfile = async () => {
   errorMessage.value = '';
   
-  const token = localStorage.getItem('access_token');
   const userId = localStorage.getItem('user_id');
 
-  if (!token || !userId || userId === 'undefined') {
+  if (!userId || userId === 'undefined') {
     errorMessage.value = "Session expirée ou profil non identifié.";
     return false;
   }
@@ -362,11 +339,10 @@ const submitProfile = async () => {
       longitude: Number(formData.value.longitude) || 0
     };
 
-    const response = await fetch(getApiUrl(`/auth/admin/user/${userId}`), {
+    const response = await fetch(getApiUrl(`/auth/admin/user/${userId}`), { credentials: 'include', 
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       },
       body: JSON.stringify(payload)
@@ -403,14 +379,7 @@ const submitDocuments = async () => {
   errorMessage.value = '';
   isLoading.value = true;
   
-  const token = localStorage.getItem('access_token');
   const userId = localStorage.getItem('user_id');
-
-  if (!token) {
-    errorMessage.value = "Session expirée. Veuillez vous reconnecter.";
-    isLoading.value = false;
-    return;
-  }
 
   if (!userId || userId === 'undefined') {
     errorMessage.value = "Profil non identifié. Veuillez vous reconnecter.";
@@ -426,11 +395,10 @@ const submitDocuments = async () => {
       docFormData.append('description', description);
       docFormData.append('files', file);
 
-      const docResponse = await fetch(getApiUrl('/documents'), {
+      const docResponse = await fetch(getApiUrl('/documents'), { credentials: 'include', 
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-        },
+},
         body: docFormData
       });
 

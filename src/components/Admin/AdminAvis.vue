@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getApiUrl } from '../../config/api';
-import { storage } from '../../utils/storage';
 
 const avisList = ref<any[]>([]);
 const isLoading = ref(false);
 
 const fetchAvis = async () => {
   isLoading.value = true;
-  const token = storage.getItem('access_token');
   try {
-    const res = await fetch(getApiUrl('/avis?onlyApproved=false'), {
+    const res = await fetch(getApiUrl('/avis?onlyApproved=false'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
       }
     });
@@ -27,12 +24,10 @@ const fetchAvis = async () => {
 };
 
 const toggleApproval = async (id: number, currentStatus: boolean) => {
-  const token = storage.getItem('access_token');
   try {
-    const res = await fetch(getApiUrl(`/avis/${id}/approve?approved=${!currentStatus}`), {
+    const res = await fetch(getApiUrl(`/avis/${id}/approve?approved=${!currentStatus}`), { credentials: 'include', 
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
       }
     });
@@ -47,12 +42,10 @@ const toggleApproval = async (id: number, currentStatus: boolean) => {
 const deleteAvis = async (id: number) => {
   if (!confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) return;
   
-  const token = storage.getItem('access_token');
   try {
-    const res = await fetch(getApiUrl(`/avis/${id}`), {
+    const res = await fetch(getApiUrl(`/avis/${id}`), { credentials: 'include', 
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
       }
     });

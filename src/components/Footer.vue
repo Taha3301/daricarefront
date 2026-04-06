@@ -8,7 +8,7 @@ const services = ref<any[]>([]);
 
 const fetchServices = async () => {
   try {
-    const response = await fetch(getApiUrl('/services/only'));
+    const response = await fetch(getApiUrl('/services/only'), { credentials: 'include' });
     if (response.ok) {
       services.value = await response.json();
     }

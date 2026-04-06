@@ -4,6 +4,11 @@ import { useLanguage } from '../composables/useLanguage';
 import { getApiUrl } from '../config/api';
 import Footer from '../components/Footer.vue';
 import bgImage from '../assets/bg1.jpg';
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import { Pagination, Autoplay, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
 
 const emit = defineEmits(['navigate']);
 const { t, isAr } = useLanguage();
@@ -19,11 +24,12 @@ const successMessage = ref('');
 const errorMessage = ref('');
 const avisList = ref<any[]>([]);
 const isLoadingAvis = ref(false);
+const stats = ref<{ average: number; total: number } | null>(null);
 
 const fetchApprovedAvis = async () => {
   isLoadingAvis.value = true;
   try {
-    const res = await fetch(getApiUrl('/avis?onlyApproved=true'));
+    const res = await fetch(getApiUrl('/avis?onlyApproved=true'), { credentials: 'include' });
     if (res.ok) {
       avisList.value = await res.json();
     }
@@ -33,8 +39,21 @@ const fetchApprovedAvis = async () => {
     isLoadingAvis.value = false;
   }
 };
+const fetchStats = async () => {
+  try {
+    const res = await fetch(getApiUrl('/avis/stats'), { credentials: 'include' });
+    if (res.ok) {
+      stats.value = await res.json();
+    }
+  } catch (err) {
+    console.error('Error fetching avis stats:', err);
+  }
+};
 
-onMounted(fetchApprovedAvis);
+onMounted(() => {
+  fetchApprovedAvis();
+  fetchStats();
+});
 
 const setRating = (val: number) => {
   rating.value = val;
@@ -62,7 +81,7 @@ const submitAvis = async () => {
       payload.patientId = parseInt(urlPatientId);
     }
 
-    const response = await fetch(getApiUrl('/avis'), {
+    const response = await fetch(getApiUrl('/avis'), { credentials: 'include', 
       method: 'POST',
       headers: {
         'accept': 'application/json',
@@ -211,38 +230,75 @@ const submitAvis = async () => {
           </svg>
         </button>
       </form>
+    </div>
 
-      <!-- Reviews Display Section -->
-      <section v-if="avisList.length > 0" class="avis-list-section">
+    <!-- Reviews Display Section -->
+    <section v-if="avisList.length > 0 || (stats && stats.total > 0)" class="avis-list-section">
+      <div class="reviews-container">
         <h2 class="section-title">{{ tx('Ce que disent nos patients', 'ما يقوله مرضانا') }}</h2>
-        <div class="avis-grid">
-          <div v-for="avis in avisList" :key="avis.id" class="avis-card">
-            <div class="avis-card-header">
-              <div class="patient-info">
-                <div class="patient-avatar">
-                  {{ avis.patient?.firstname?.charAt(0).toUpperCase() || 'P' }}
+        
+        <!-- Stats Overview -->
+        <div v-if="stats && stats.total > 0" class="stats-overview">
+          <div class="stats-glass-card">
+             <div class="stats-average-big">
+                <span class="avg-number">{{ Number(stats.average).toFixed(1) }}</span>
+                <div class="star-rating">
+                   <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" :fill="i <= Math.round(stats.average) ? '#fbbf24' : '#e2e8f0'" width="28" height="28" style="filter: drop-shadow(0 2px 5px rgba(251, 191, 36, 0.4));">
+                     <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                   </svg>
                 </div>
-                <div class="patient-details">
-                  <div class="patient-name">{{ avis.patient?.firstname }} {{ avis.patient?.lastname }}</div>
-                  <div class="avis-date">{{ new Date(avis.createdAt).toLocaleDateString(isAr ? 'ar-TN' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</div>
-                </div>
-              </div>
-              <div class="avis-rating">
-                <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" :fill="i <= avis.rating ? '#fbbf24' : '#e2e8f0'" width="16" height="16">
-                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                </svg>
-              </div>
-            </div>
-            <h3 class="avis-card-title">{{ avis.title }}</h3>
-            <p class="avis-card-comment">{{ avis.comment }}</p>
-            <div v-if="avis.wouldRecommend" class="recommend-badge">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>{{ tx('Recommande DariCare', 'ينصح بـ داري كير') }}</span>
-            </div>
+             </div>
+             <div class="stats-total">
+               <span>{{ tx('Basé sur', 'بناءً على') }} <strong>{{ stats.total }}</strong> {{ tx('avis patients', 'تقييمات المرضى') }}</span>
+             </div>
           </div>
         </div>
-      </section>
-    </div>
+
+        <swiper
+          v-if="avisList.length > 0"
+          :modules="[Pagination, Autoplay, Navigation]"
+          :slides-per-view="1"
+          :space-between="20"
+          :pagination="{ clickable: true }"
+          :autoplay="{ delay: 5000, disableOnInteraction: false }"
+          :navigation="true"
+          :loop="avisList.length > 3"
+          :breakpoints="{
+            '640': { slidesPerView: 1, spaceBetween: 20 },
+            '768': { slidesPerView: 2, spaceBetween: 30 },
+            '1024': { slidesPerView: 3, spaceBetween: 30 }
+          }"
+          class="avis-swiper"
+        >
+          <swiper-slide v-for="avis in avisList" :key="avis.id">
+            <div class="avis-card">
+              <div class="avis-card-header">
+                <div class="patient-info">
+                  <div class="patient-avatar">
+                    {{ avis.patient?.firstname?.charAt(0).toUpperCase() || 'P' }}
+                  </div>
+                  <div class="patient-details">
+                    <div class="patient-name">{{ avis.patient?.firstname }} {{ avis.patient?.lastname }}</div>
+                    <div class="avis-date">{{ new Date(avis.createdAt).toLocaleDateString(isAr ? 'ar-TN' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</div>
+                  </div>
+                </div>
+                <div class="avis-rating">
+                  <svg v-for="i in 5" :key="i" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" :fill="i <= avis.rating ? '#fbbf24' : '#e2e8f0'" width="16" height="16">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                  </svg>
+                </div>
+              </div>
+              <h3 class="avis-card-title">{{ avis.title }}</h3>
+              <p class="avis-card-comment">{{ avis.comment }}</p>
+              <div v-if="avis.wouldRecommend" class="recommend-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>{{ tx('Recommande DariCare', 'ينصح بـ داري كير') }}</span>
+              </div>
+            </div>
+          </swiper-slide>
+        </swiper>
+      </div>
+    </section>
     <Footer @navigate="(view: string, sId?: number, snId?: number) => emit('navigate', view, sId, snId)" />
   </div>
 </template>
@@ -486,22 +542,31 @@ const submitAvis = async () => {
 /* Reviews List Styles */
 .avis-list-section {
   margin-top: 5rem;
-  padding-bottom: 4rem;
+  padding-bottom: 5rem;
+  width: 100%;
+}
+
+.reviews-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
 }
 
 .section-title {
   text-align: center;
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 800;
   color: #1e293b;
   margin-bottom: 3rem;
   letter-spacing: -0.01em;
 }
 
-.avis-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+[dir="rtl"] .section-title {
+  font-family: 'Cairo', sans-serif;
+}
+
+.avis-swiper {
+  padding: 1rem 1rem 4rem !important;
 }
 
 .avis-card {
@@ -513,6 +578,8 @@ const submitAvis = async () => {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
+  height: 100%; /* Ensure all cards have same height in slider */
+  min-height: 250px;
 }
 
 .avis-card:hover {
@@ -536,7 +603,7 @@ const submitAvis = async () => {
 .patient-avatar {
   width: 42px;
   height: 42px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #2563eb 100%);
   color: white;
   border-radius: 12px;
   display: flex;
@@ -592,14 +659,132 @@ const submitAvis = async () => {
   font-size: 0.8rem;
   font-weight: 600;
   border: 1px solid #dcfce7;
+  align-self: flex-start;
+}
+
+/* Swiper navigation and pagination customization */
+:deep(.swiper-pagination-bullet-active) {
+  background: var(--primary-color) !important;
+}
+
+:deep(.swiper-button-next),
+:deep(.swiper-button-prev) {
+  color: var(--primary-color);
+  background: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  &::after {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .reviews-container {
+    padding: 0 1rem;
+  }
+  .section-title {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+  }
+  .avis-swiper {
+    padding-bottom: 3rem !important;
+  }
+}
+
+/* Stats Styles */
+.stats-overview {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 3.5rem;
+}
+
+.stats-glass-card {
+  background: white;
+  padding: 1.75rem 3.5rem;
+  border-radius: 28px;
+  box-shadow: 0 10px 40px -10px rgba(43, 105, 173, 0.15), 0 0 0 1px rgba(230, 235, 240, 0.8) inset;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.stats-glass-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px -10px rgba(43, 105, 173, 0.2), 0 0 0 1px rgba(230, 235, 240, 0.8) inset;
+}
+
+.stats-average-big {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.avg-number {
+  font-size: 4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #1e3a8a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.star-rating {
+  display: flex;
+  gap: 6px;
+}
+
+.stats-total {
+  font-size: 1.05rem;
+  color: #64748b;
+  font-weight: 500;
+  background: #f8fafc;
+  padding: 0.5rem 1.25rem;
+  border-radius: 99px;
+  border: 1px solid #e2e8f0;
+}
+
+.stats-total strong {
+  color: #1e293b;
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+[dir="rtl"] .stats-average-big {
+  flex-direction: row-reverse;
 }
 
 @media (max-width: 640px) {
-  .avis-grid {
-    grid-template-columns: 1fr;
+  .stats-glass-card {
+    padding: 1.5rem 2rem;
   }
-  .section-title {
-    font-size: 1.5rem;
+  .avg-number {
+    font-size: 3rem;
+  }
+  .stats-total {
+    font-size: 0.95rem;
   }
 }
 </style>

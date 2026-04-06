@@ -39,7 +39,7 @@ const handleSignup = async () => {
   isLoading.value = true;
   
   try {
-    const response = await fetch(getApiUrl('/auth/professional/register'), {
+    const response = await fetch(getApiUrl('/auth/professional/register'), { credentials: 'include', 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -67,7 +67,7 @@ const handleSignup = async () => {
       storage.setItem('user_id', userId, rememberMe.value);
     }
     if (data.access_token) {
-      storage.setItem('access_token', data.access_token, rememberMe.value);
+      // access_token is now handled securely by the browser via HttpOnly cookies
     }
 
     alert(currentLang.value === 'ar' ? 'تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.' : 'Compte créé avec succès ! Veuillez vous connecter.');

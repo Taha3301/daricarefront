@@ -37,12 +37,10 @@ const form = ref({
 });
 
 const fetchAdmins = async () => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
   try {
     isLoading.value = true;
-    const res = await fetch(getApiUrl('/admin/users'), {
-      headers: { 'Authorization': `Bearer ${token}`, 'accept': '*/*' }
+    const res = await fetch(getApiUrl('/admin/users'), { credentials: 'include', 
+      headers: { 'accept': '*/*' }
     });
     if (res.ok) {
       admins.value = await res.json();
@@ -66,14 +64,11 @@ const fetchAdmins = async () => {
 };
 
 const toggleBan = async (admin: Admin) => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
   togglingId.value = admin.id;
   try {
-    const res = await fetch(getApiUrl(`/admin/users/${admin.id}/ban`), {
+    const res = await fetch(getApiUrl(`/admin/users/${admin.id}/ban`), { credentials: 'include', 
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'accept': '*/*'
       },
@@ -97,14 +92,11 @@ const toggleBan = async (admin: Admin) => {
 };
 
 const toggleSuperadmin = async (admin: Admin) => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
   togglingId.value = admin.id;
   try {
-    const res = await fetch(getApiUrl(`/admin/users/${admin.id}/superadmin`), {
+    const res = await fetch(getApiUrl(`/admin/users/${admin.id}/superadmin`), { credentials: 'include', 
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'accept': '*/*'
       },
@@ -128,8 +120,6 @@ const toggleSuperadmin = async (admin: Admin) => {
 };
 
 const createAdmin = async () => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
   if (!isCurrentSuperAdmin.value || !props.superadmin) {
     errorMsg.value = '⛔ Accès refusé — Seul un Super Administrateur peut ajouter de nouveaux administrateurs.';
     setTimeout(() => { if (errorMsg.value.startsWith('⛔')) errorMsg.value = ''; }, 5000);
@@ -139,10 +129,9 @@ const createAdmin = async () => {
   successMsg.value = '';
   isSubmitting.value = true;
   try {
-    const res = await fetch(getApiUrl('/auth/admin/register'), {
+    const res = await fetch(getApiUrl('/auth/admin/register'), { credentials: 'include', 
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'accept': '*/*'
       },

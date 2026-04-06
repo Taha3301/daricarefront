@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { storage } from '../../utils/storage';
-const localStorage = storage;
 import { getApiUrl } from '../../config/api';
 
 const profileForm = ref({
@@ -31,14 +29,11 @@ const isUpdatingNotifications = ref(false);
 const notificationsStatus = ref<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
 
 const fetchProfile = async () => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   isFetchingProfile.value = true;
   try {
-    const response = await fetch(getApiUrl('/auth/profile'), {
+    const response = await fetch(getApiUrl('/auth/profile'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -68,18 +63,15 @@ const fetchProfile = async () => {
 };
 
 const handleUpdateProfile = async () => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   isUpdatingProfile.value = true;
   profileStatus.value = { type: null, message: '' };
 
   try {
-    const response = await fetch(getApiUrl('/auth/profile'), {
+    const response = await fetch(getApiUrl('/auth/profile'), { credentials: 'include', 
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
       },
       body: JSON.stringify(profileForm.value)
@@ -148,17 +140,14 @@ const getCurrentLocation = () => {
 };
 
 const handleToggleWhatsApp = async () => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   isUpdatingNotifications.value = true;
   notificationsStatus.value = { type: null, message: '' };
 
   try {
-    const response = await fetch(getApiUrl('/professionals/whatsapp'), {
+    const response = await fetch(getApiUrl('/professionals/whatsapp'), { credentials: 'include', 
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -223,18 +212,15 @@ const confirmResetPassword = async () => {
     return;
   }
 
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   isResettingPassword.value = true;
   isVerifyModalOpen.value = false;
 
   try {
-    const response = await fetch(getApiUrl('/auth/change-password'), {
+    const response = await fetch(getApiUrl('/auth/change-password'), { credentials: 'include', 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
       },
       body: JSON.stringify({

@@ -8,14 +8,12 @@ const currentPage = ref(1);
 const itemsPerPage = ref(5);
 
 const fetchAllServices = async () => {
-  const token = localStorage.getItem('access_token');
   try {
     isLoading.value = true;
-    const response = await fetch(getApiUrl('/services'), {
+    const response = await fetch(getApiUrl('/services'), { credentials: 'include', 
       headers: { 
         'accept': '*/*',
-        'Authorization': `Bearer ${token}` 
-      }
+}
     });
     if (response.ok) {
       services.value = await response.json();

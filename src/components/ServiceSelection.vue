@@ -22,15 +22,12 @@ const isLoading = ref(false);
 const errorMsg = ref<string | null>(null);
 
 const fetchServices = async () => {
-  const token = localStorage.getItem('access_token');
   try {
     isLoading.value = true;
     errorMsg.value = null;
 
-    const headers: Record<string, string> = { accept: '*/*' };
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    const response = await fetch(getApiUrl('/services/only'), { headers });
+    const response = await fetch(getApiUrl('/services/only'), { credentials: 'include', 
+      headers: { accept: '*/*' } });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch services (${response.status})`);

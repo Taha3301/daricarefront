@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getApiUrl } from '../../config/api';
-import { storage } from '../../utils/storage';
-const localStorage = storage;
 
 const services = ref<any[]>([]);
 const isLoading = ref(false);
@@ -61,14 +59,12 @@ const editingContent = ref<any>(null);
 const originalType = ref<string>('');
 
 const fetchServices = async () => {
-  const token = localStorage.getItem('access_token');
   try {
     isLoading.value = true;
-    const response = await fetch(getApiUrl('/services/only'), {
+    const response = await fetch(getApiUrl('/services/only'), { credentials: 'include', 
       headers: { 
         'accept': '*/*',
-        'Authorization': `Bearer ${token}` 
-      }
+}
     });
     if (response.ok) {
       services.value = await response.json();
@@ -81,13 +77,11 @@ const fetchServices = async () => {
 };
 
 const fetchSoins = async (serviceId: number) => {
-  const token = localStorage.getItem('access_token');
   try {
-    const response = await fetch(getApiUrl(`/soins/service/${serviceId}`), {
+    const response = await fetch(getApiUrl(`/soins/service/${serviceId}`), { credentials: 'include', 
       headers: { 
         'accept': '*/*',
-        'Authorization': `Bearer ${token}` 
-      }
+}
     });
     if (response.ok) {
       soins.value = await response.json();
@@ -98,7 +92,6 @@ const fetchSoins = async (serviceId: number) => {
 };
 
 const handleSaveService = async () => {
-  const token = localStorage.getItem('access_token');
   const method = editingService.value ? 'PATCH' : 'POST';
   const url = editingService.value 
     ? getApiUrl(`/services/${editingService.value.id}`)
@@ -116,9 +109,9 @@ const handleSaveService = async () => {
   try {
     const response = await fetch(url, {
       method,
+      credentials: 'include',
       headers: {
-        'accept': '*/*',
-        'Authorization': `Bearer ${token}`
+        'accept': '*/*'
       },
       body: formData
     });
@@ -139,14 +132,12 @@ const handleSaveService = async () => {
 
 const handleDeleteService = async (id: number) => {
   if (!confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) return;
-  const token = localStorage.getItem('access_token');
   try {
-    const response = await fetch(getApiUrl(`/services/${id}`), {
+    const response = await fetch(getApiUrl(`/services/${id}`), { credentials: 'include', 
       method: 'DELETE',
       headers: { 
         'accept': '*/*',
-        'Authorization': `Bearer ${token}` 
-      }
+}
     });
     if (response.ok) {
       fetchServices();
@@ -162,7 +153,6 @@ const handleDeleteService = async (id: number) => {
 };
 
 const handleSaveSoin = async () => {
-  const token = localStorage.getItem('access_token');
   const method = editingSoin.value ? 'PATCH' : 'POST';
   const url = editingSoin.value
     ? getApiUrl(`/soins/${editingSoin.value.id}`)
@@ -182,10 +172,10 @@ const handleSaveSoin = async () => {
   try {
     const response = await fetch(url, {
       method,
+      credentials: 'include',
       headers: {
         'accept': '*/*',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
     });
@@ -206,14 +196,12 @@ const handleSaveSoin = async () => {
 
 const handleDeleteSoin = async (id: number) => {
   if (!confirm('Êtes-vous sûr de vouloir supprimer ce soin ?')) return;
-  const token = localStorage.getItem('access_token');
   try {
-    const response = await fetch(getApiUrl(`/soins/${id}`), {
+    const response = await fetch(getApiUrl(`/soins/${id}`), { credentials: 'include', 
       method: 'DELETE',
       headers: { 
         'accept': '*/*',
-        'Authorization': `Bearer ${token}` 
-      }
+}
     });
     if (response.ok) {
       fetchSoins(selectedService.value.id);
@@ -229,7 +217,6 @@ const handleDeleteSoin = async (id: number) => {
 };
 
 const handleSaveContent = async () => {
-  const token = localStorage.getItem('access_token');
   const type = contentForm.value.type;
   
   // Handle type change: if editing and type changed, we must delete and recreate
@@ -238,12 +225,11 @@ const handleSaveContent = async () => {
   if (typeChanged) {
     // Delete old one first
     try {
-      await fetch(getApiUrl(`/soins/content/${originalType.value}/${contentForm.value.id}`), {
+      await fetch(getApiUrl(`/soins/content/${originalType.value}/${contentForm.value.id}`), { credentials: 'include', 
         method: 'DELETE',
         headers: { 
           'accept': '*/*',
-          'Authorization': `Bearer ${token}` 
-        }
+}
       });
     } catch (err) {
       console.error('Failed to delete old content during type change:', err);
@@ -270,10 +256,10 @@ const handleSaveContent = async () => {
   try {
     const response = await fetch(url, {
       method,
+      credentials: 'include',
       headers: {
         'accept': '*/*',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
     });
@@ -293,14 +279,12 @@ const handleSaveContent = async () => {
 
 const handleDeleteContent = async (item: any, type: string) => {
   if (!confirm('Êtes-vous sûr de vouloir supprimer ce champ ?')) return;
-  const token = localStorage.getItem('access_token');
   try {
-    const response = await fetch(getApiUrl(`/soins/content/${type}/${item.id}`), {
+    const response = await fetch(getApiUrl(`/soins/content/${type}/${item.id}`), { credentials: 'include', 
       method: 'DELETE',
       headers: { 
         'accept': '*/*',
-        'Authorization': `Bearer ${token}` 
-      }
+}
     });
     if (response.ok) {
       fetchSoins(selectedService.value.id);

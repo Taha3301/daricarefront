@@ -3,7 +3,7 @@ import { ref, onMounted, defineAsyncComponent, defineComponent, h, computed } fr
 import { storage } from './utils/storage'
 import { useLanguage, type Lang } from './composables/useLanguage'
 import Navbar from './components/Navbar.vue'
-import { API_BASE_URL } from './config/api'
+
 
 // ── Shared Loading / Error shims ─────────────────────────────────────────────
 const AppLoader = defineComponent({
@@ -68,25 +68,10 @@ interface MedicalRequest {
 
 const medicalRequests = ref<MedicalRequest[]>([]);
 
-// ── Heartbeat (Keep-Alive) ───────────────────────────────────────────────────
-/**
- * Pings the backend every 10 minutes to help keep the Render server awake
- * while the application is active in a browser tab.
- */
-const startHeartbeat = () => {
-  // Initial ping to a known valid endpoint
-  fetch(`${API_BASE_URL}/avis`).catch(() => {});
-  
-  // Periodic ping every 10 minutes
-  setInterval(() => {
-    console.log(`[Heartbeat] Pinging backend at ${new Date().toLocaleTimeString()}`);
-    fetch(`${API_BASE_URL}/avis`).catch(err => console.error('[Heartbeat] Ping failed:', err));
-  }, 10 * 60 * 1000);
-};
+
 
 onMounted(() => {
-  // Start the heartbeat
-  startHeartbeat();
+
   // Show language popup if no preference saved yet
   if (!localStorage.getItem('daricare_lang')) {
     showLangPopup.value = true;
@@ -117,11 +102,13 @@ onMounted(() => {
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 
-  const token = storage.getItem('access_token');
+  // With HttpOnly cookies, we can't read the token from JS.
+  // Instead rely on user_role and user_id that are still stored in localStorage.
   const role = storage.getItem('user_role');
+  const userId = storage.getItem('user_id');
   const status = storage.getItem('user_status');
 
-  if (token && role) {
+  if (role && userId) {
     if (status === 'PENDING') {
       currentView.value = 'verification';
     } else if (role === 'admin') {

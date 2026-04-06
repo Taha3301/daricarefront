@@ -72,29 +72,21 @@ export class PushNotificationService {
 
   static async saveTokenToBackend(token?: string) {
     const fcmToken = token || storage.getItem('fcm_token');
-    const accessToken = storage.getItem('access_token');
     
-    console.log('[PushService] saveTokenToBackend attempt:', { 
-      hasToken: !!fcmToken, 
-      hasAccess: !!accessToken 
-    });
+    console.log('[PushService] saveTokenToBackend attempt:', { hasToken: !!fcmToken });
 
-    if (!fcmToken || !accessToken) {
-      console.warn('[PushService] Cannot sync token: fcmToken or accessToken missing', {
-        fcmToken: !!fcmToken,
-        accessToken: !!accessToken
-      });
+    if (!fcmToken) {
+      console.warn('[PushService] Cannot sync token: fcmToken missing');
       return;
     }
 
     try {
       console.log('[PushService] Patching /auth/fcm-token...');
-      const response = await fetch(`${API_BASE_URL}/auth/fcm-token`, {
+      const response = await fetch(`${API_BASE_URL}/auth/fcm-token`, { credentials: 'include', 
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
+},
         body: JSON.stringify({ token: fcmToken })
       });
       

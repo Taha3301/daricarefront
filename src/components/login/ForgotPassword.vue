@@ -17,7 +17,7 @@ const handleForgotPassword = async () => {
   isLoading.value = true;
   
   try {
-    const response = await fetch(getApiUrl('/auth/forgot-password'), {
+    const response = await fetch(getApiUrl('/auth/forgot-password'), { credentials: 'include', 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

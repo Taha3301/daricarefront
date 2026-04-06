@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { getApiUrl } from '../../config/api';
-import { storage } from '../../utils/storage';
-const localStorage = storage;
 
 const showAdminModal = ref(false);
 const isLoading = ref(false);
@@ -23,17 +21,15 @@ const passwordForm = ref({
 });
 
 const handleRegisterAdmin = async () => {
-  const token = localStorage.getItem('access_token');
   error.value = null;
   success.value = null;
   isLoading.value = true;
 
   try {
-    const response = await fetch(getApiUrl('/auth/admin/register'), {
+    const response = await fetch(getApiUrl('/auth/admin/register'), { credentials: 'include', 
       method: 'POST',
       headers: {
         'accept': '*/*',
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -82,18 +78,15 @@ const confirmChangePassword = async () => {
     return;
   }
 
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   isLoading.value = true;
   showVerifyModal.value = false;
 
   try {
-    const response = await fetch(getApiUrl('/auth/change-password'), {
+    const response = await fetch(getApiUrl('/auth/change-password'), { credentials: 'include', 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
       },
       body: JSON.stringify({

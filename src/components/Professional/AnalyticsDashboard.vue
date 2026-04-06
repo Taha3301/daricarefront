@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { getApiUrl } from '../../config/api';
-import { storage } from '../../utils/storage';
 
 interface AnalyticsSummary {
   totalEarning: number;
@@ -46,12 +45,10 @@ const error = ref('');
 const fetchAnalytics = async () => {
   isLoading.value = true;
   error.value = '';
-  const token = storage.getItem('access_token');
   
   try {
-    const response = await fetch(getApiUrl('/professionals/analytics'), {
+    const response = await fetch(getApiUrl('/professionals/analytics'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
       }
     });

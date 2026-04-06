@@ -6,6 +6,25 @@ import { useLanguage } from '../composables/useLanguage';
 
 const { t, isAr } = useLanguage();
 
+import bgAmbulance from '../assets/desktopbg/Ambulance privée.png';
+import bgInfirmier from '../assets/desktopbg/infermier.png';
+import bgKine from '../assets/desktopbg/kine.png';
+import bgLocation from '../assets/desktopbg/location.png';
+import bgMedecin from '../assets/desktopbg/medicin a domicile.png';
+import bgSageFemme from '../assets/desktopbg/sage-femme.png';
+
+const getDesktopImage = (serviceName: string) => {
+  if (!serviceName) return undefined;
+  const name = serviceName.toLowerCase();
+  if (name.includes('ambulance')) return bgAmbulance;
+  if (name.includes('infirmier')) return bgInfirmier;
+  if (name.includes('kiné') || name.includes('kine')) return bgKine;
+  if (name.includes('location')) return bgLocation;
+  if (name.includes('sage') && name.includes('femme')) return bgSageFemme;
+  if (name.includes('médecin') || name.includes('medecin')) return bgMedecin;
+  return undefined;
+};
+
 type Service = {
   id: number;
   name: string;
@@ -79,16 +98,12 @@ const onSearchFocus = () => { showDropdown.value = true; };
 const onSearchBlur = () => { setTimeout(() => { showDropdown.value = false; }, 150); };
 
 const fetchServices = async () => {
-  const token = localStorage.getItem('access_token');
   try {
     isLoading.value = true;
     errorMsg.value = null;
 
-    const headers: Record<string, string> = { accept: '*/*' };
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    // Using the /services/only endpoint to get services with images
-    const response = await fetch(getApiUrl('/services/only'), { headers });
+    const response = await fetch(getApiUrl('/services/only'), { credentials: 'include', 
+      headers: { accept: '*/*' } });
 
     if (response.status === 401) {
       console.warn('Unauthorized. Redirecting to login.');
@@ -201,16 +216,18 @@ onMounted(() => {
               @click="emit('navigate', 'service-soins', service.id)"
             >
               <div class="card-image-wrap">
-                <img 
-                  v-if="service.image"
-                  :src="optimizeCloudinary(service.image, 600)" 
-                  :alt="isAr && service.name_ar ? service.name_ar : service.name"
-                  class="card-image"
-                  :loading="index < 4 ? 'eager' : 'lazy'"
-                  :fetchpriority="index < 2 ? 'high' : 'auto'"
-                  width="400"
-                  height="200"
-                />
+                <picture v-if="service.image || getDesktopImage(service.name)">
+                  <source v-if="getDesktopImage(service.name)" media="(min-width: 769px)" :srcset="getDesktopImage(service.name)" />
+                  <img 
+                    :src="service.image ? optimizeCloudinary(service.image, 600) : getDesktopImage(service.name)" 
+                    :alt="isAr && service.name_ar ? service.name_ar : service.name"
+                    class="card-image"
+                    :loading="index < 4 ? 'eager' : 'lazy'"
+                    :fetchpriority="index < 2 ? 'high' : 'auto'"
+                    width="400"
+                    height="200"
+                  />
+                </picture>
               </div>
               <div class="card-shimmer"></div>
               <div class="card-overlay"></div>
@@ -579,7 +596,7 @@ onMounted(() => {
 
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   width: 100%;
   max-width: 1200px;
@@ -596,9 +613,9 @@ onMounted(() => {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   /* Organic Multi-Axis Animation */
-  animation: none;
   animation-delay: 0s;
-  height: 200px;
+  height: auto;
+  aspect-ratio: 948 / 239;
   display: flex;
   align-items: flex-end; /* Align content to bottom */
   transform: translateZ(0);
@@ -887,7 +904,7 @@ onMounted(() => {
 
 /* Responsive */
 @media (max-width: 1200px) {
-  .services-grid { grid-template-columns: repeat(3, 1fr); }
+  .services-grid { grid-template-columns: repeat(2, 1fr); }
   .features-grid { gap: 1.5rem; }
   .hero-title { font-size: 3rem; }
 }
@@ -917,8 +934,13 @@ onMounted(() => {
   }
 
   .services-grid { 
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 0.75rem;
+    grid-template-columns: 1fr; 
+    gap: 1rem;
+  }
+
+  /* Limit to 6 items maximum on mobile */
+  .service-card:nth-child(n+7) {
+    display: none;
   }
   
   .hero-bg {
@@ -947,8 +969,9 @@ onMounted(() => {
   }
   
   .service-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Faster transitions */
-    height: 140px; /* Slightly taller for safety and premium feel */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: auto;
+    aspect-ratio: 948 / 239;
   }
 
   .card-content {
@@ -1037,7 +1060,7 @@ onMounted(() => {
 }
 
 @media (max-width: 600px) {
-  /* Maintain 2 columns on even smaller screens to keep 6 cards in one view */
+  /* Smaller screens */
   .hero-title { font-size: 1.6rem; }
   .card-image { height: 100%; }
 }

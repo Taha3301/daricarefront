@@ -31,7 +31,7 @@ const handleResetPassword = async () => {
   isLoading.value = true;
   
   try {
-    const response = await fetch(getApiUrl('/auth/reset-password'), {
+    const response = await fetch(getApiUrl('/auth/reset-password'), { credentials: 'include', 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

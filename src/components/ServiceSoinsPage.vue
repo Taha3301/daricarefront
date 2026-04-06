@@ -170,6 +170,70 @@ const formData = ref({
   medicalEquipment: [] as string[]
 });
 
+const addressSuggestionsForm = ref<any[]>([]);
+const isSearchingAddressForm = ref(false);
+const showAddressFormDropdown = ref(false);
+const isSelectingAddressForm = ref(false);
+let addressFormTimeout: any = null;
+
+watch(() => formData.value.address, (newVal) => {
+  if (formData.value.isIndifferent || isSelectingAddressForm.value) return;
+  
+  if (addressFormTimeout) clearTimeout(addressFormTimeout);
+  
+  if (!newVal || newVal.trim().length === 0) {
+    addressSuggestionsForm.value = [];
+    showAddressFormDropdown.value = false;
+    return;
+  }
+  
+  addressFormTimeout = setTimeout(async () => {
+    isSearchingAddressForm.value = true;
+    try {
+      const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(newVal)}&bbox=7.5,30.0,11.6,37.5&limit=10`);
+      if (!res.ok) throw new Error('API Error');
+      const data = await res.json();
+      addressSuggestionsForm.value = data.features || [];
+      showAddressFormDropdown.value = addressSuggestionsForm.value.length > 0;
+    } catch (err) {
+      console.error(err);
+    } finally {
+      isSearchingAddressForm.value = false;
+    }
+  }, 350);
+});
+
+const selectAddressForm = (place: any) => {
+  isSelectingAddressForm.value = true;
+  const props = place.properties;
+  const parts = [];
+  if (props.name) parts.push(props.name);
+  if (props.housenumber || props.street) parts.push((props.housenumber ? props.housenumber + ' ' : '') + (props.street || ''));
+  if (props.city) parts.push(props.city);
+  else if (props.state) parts.push(props.state);
+  
+  const fullAddress = [...new Set(parts.filter(s => s && s.trim().length > 0))].join(', ');
+  
+  formData.value.address = fullAddress;
+  showAddressFormDropdown.value = false;
+  addressSuggestionsForm.value = [];
+  setTimeout(() => isSelectingAddressForm.value = false, 500);
+};
+
+const closeAddressAutocomplete = () => {
+  setTimeout(() => showAddressFormDropdown.value = false, 200);
+};
+
+const toggleIndifferent = () => {
+  formData.value.isIndifferent = !formData.value.isIndifferent;
+  if(formData.value.isIndifferent) {
+    formData.value.address = 'Indifférent';
+    showAddressFormDropdown.value = false;
+  } else {
+    formData.value.address = '';
+  }
+};
+
 const resetForm = () => {
   isLoading.value = false;
   isSuccess.value = false;
@@ -279,15 +343,12 @@ const activeSoin = computed(() => {
 });
 
 const fetchServices = async () => {
-  const token = localStorage.getItem('access_token');
   try {
     isLoading.value = true;
     errorMsg.value = null;
 
-    const headers: Record<string, string> = { accept: '*/*' };
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    const res = await fetch(getApiUrl('/services'), { headers });
+    const res = await fetch(getApiUrl('/services'), { credentials: 'include', 
+      headers: { accept: '*/*' } });
     
     if (res.status === 401) {
       console.warn('Unauthorized. Redirecting to login.');
@@ -592,13 +653,8 @@ const submitRequest = async () => {
       fd.append('prescriptions', file);
     });
 
-    const token = localStorage.getItem('access_token');
-    const headers: Record<string, string> = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    const res = await fetch(getApiUrl('/bookings'), {
+    const res = await fetch(getApiUrl('/bookings'), { credentials: 'include', 
       method: 'POST',
-      headers,
       body: fd
     });
 
@@ -920,14 +976,40 @@ onMounted(() => {
           <div class="form-group mb-2">
             <div class="label-with-action">
               <label>{{ tx('Lieu des soins', 'مكان الرعاية') }}</label>
-              <button class="btn-text" :class="{ active: formData.isIndifferent }" @click="formData.isIndifferent = !formData.isIndifferent">
+              <button class="btn-text" :class="{ active: formData.isIndifferent }" @click="toggleIndifferent">
                 <div class="check-box" :class="{ checked: formData.isIndifferent }">
                   <span v-if="formData.isIndifferent">✓</span>
                 </div>
                 {{ tx('Indifférent', 'غير مهم') }}
               </button>
             </div>
-            <input v-model="formData.address" type="text" class="form-input" :placeholder="tx('Ex: 123 Rue de Médical, Paris', 'مثال: شارع التطبيب, تونس')" :disabled="formData.isIndifferent" />
+            <div class="autocomplete-wrapper" style="position: relative; width: 100%;">
+              <input 
+                v-model="formData.address" 
+                type="text" 
+                class="form-input" 
+                :placeholder="tx('Ex: 123 Rue de Médical, Paris', 'مثال: شارع التطبيب, تونس')" 
+                :disabled="formData.isIndifferent" 
+                @focus="addressSuggestionsForm.length > 0 && (showAddressFormDropdown = true)"
+                @blur="closeAddressAutocomplete"
+                autocomplete="off"
+              />
+              <div v-if="isSearchingAddressForm" class="mini-loader" style="position: absolute; right: 15px; top: 15px;"></div>
+              
+              <div v-if="showAddressFormDropdown && addressSuggestionsForm.length > 0 && !formData.isIndifferent" class="autocomplete-results">
+                <div 
+                  v-for="place in addressSuggestionsForm" 
+                  :key="place.properties.osm_id" 
+                  class="result-item"
+                  @mousedown.prevent="selectAddressForm(place)"
+                >
+                  <div class="place-name">{{ place.properties.name || place.properties.street || place.properties.city }}</div>
+                  <div class="place-details">
+                    {{ [place.properties.city || place.properties.town, place.properties.state].filter(Boolean).join(', ') }}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="form-group">

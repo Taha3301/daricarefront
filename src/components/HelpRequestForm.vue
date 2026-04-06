@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import LegalModal from './LegalModal.vue';
 import { getApiUrl } from '../config/api';
 
@@ -13,12 +13,83 @@ const formData = ref({
   name: '',
   phone: '',
   address: '',
+  startDate: '',
   serviceType: props.initialService || '',
   kineCareType: '',
   urgency: 'medium',
   description: '',
   legalAccepted: false
 });
+
+const addressQuery = ref('');
+const addressResults = ref<any[]>([]);
+const showAddressDropdown = ref(false);
+const isSearchingAddress = ref(false);
+const addressIndifferent = ref(false);
+
+let addressTimeout: ReturnType<typeof setTimeout>;
+
+const isSelectingAddress = ref(false);
+
+watch(addressQuery, (newVal) => {
+  if (addressIndifferent.value || isSelectingAddress.value) return;
+  formData.value.address = newVal;
+  clearTimeout(addressTimeout);
+  
+  if (!newVal || newVal.trim().length === 0) {
+    addressResults.value = [];
+    showAddressDropdown.value = false;
+    return;
+  }
+  
+  addressTimeout = setTimeout(async () => {
+    isSearchingAddress.value = true;
+    try {
+      const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(newVal)}&bbox=7.5,30.0,11.6,37.5&limit=10`);
+      if (!response.ok) throw new Error('API down');
+      const data = await response.json();
+      addressResults.value = data.features || [];
+      if (addressResults.value.length > 0) {
+        showAddressDropdown.value = true;
+      } else {
+        showAddressDropdown.value = false;
+      }
+    } catch (e) {
+      console.error('Erreur lors de la recherche adresse:', e);
+    } finally {
+      isSearchingAddress.value = false;
+    }
+  }, 350);
+});
+
+const selectAddress = (feature: any) => {
+  isSelectingAddress.value = true;
+  const p = feature.properties;
+  const parts = [
+    p.name,
+    p.housenumber ? p.housenumber + ' ' + (p.street || '') : p.street,
+    p.city || p.town || p.village,
+    p.state
+  ].filter(Boolean);
+  
+  const formatted = [...new Set(parts.filter(s => s && s.trim().length > 0))].join(', ');
+  addressQuery.value = formatted;
+  formData.value.address = formatted;
+  showAddressDropdown.value = false;
+  setTimeout(() => isSelectingAddress.value = false, 500);
+};
+
+watch(addressIndifferent, (val) => {
+  if (val) {
+    formData.value.address = 'Indifférent';
+  } else {
+    formData.value.address = addressQuery.value;
+  }
+});
+
+const onAddressBlur = () => {
+  setTimeout(() => showAddressDropdown.value = false, 200);
+};
 
 const kineOptions = [
   'Rééducation à la marche / déambulation',
@@ -63,7 +134,7 @@ const submitForm = async () => {
   console.log('API URL:', getApiUrl('api/requests'));
 
   try {
-    const response = await fetch(getApiUrl('api/requests'), {
+    const response = await fetch(getApiUrl('api/requests'), { credentials: 'include', 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -116,9 +187,54 @@ const submitForm = async () => {
           </div>
         </div>
 
-        <div class="input-group">
-          <label for="address">Adresse du service</label>
-          <input v-model="formData.address" type="text" id="address" placeholder="123 Rue de Médicale, Paris" class="styled-input" required />
+        <div class="section-divider">
+          <h3>Où et quand souhaitez-vous faire vos soins ?</h3>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group address-group">
+            <div class="label-row">
+              <label>Lieu des soins</label>
+              <div class="indiff-toggle">
+                <input type="checkbox" id="indiff" v-model="addressIndifferent" />
+                <label for="indiff" class="indiff-label">Indifférent</label>
+              </div>
+            </div>
+            
+            <div class="autocomplete-wrapper" v-if="!addressIndifferent">
+              <input 
+                v-model="addressQuery" 
+                type="text" 
+                placeholder="Ex: 123 Rue de Médical, Paris" 
+                class="styled-input" 
+                @focus="addressResults.length > 0 && (showAddressDropdown = true)"
+                @blur="onAddressBlur"
+                autocomplete="off"
+                :required="!addressIndifferent" 
+              />
+              <div v-if="showAddressDropdown && addressResults.length > 0" class="address-dropdown">
+                <div 
+                  v-for="(feature, idx) in addressResults" 
+                  :key="idx" 
+                  class="address-option"
+                  @mousedown.prevent="selectAddress(feature)"
+                >
+                  <div class="addr-name">{{ feature.properties.name || feature.properties.street || feature.properties.city }}</div>
+                  <div class="addr-details">
+                    {{ [feature.properties.city || feature.properties.town, feature.properties.state].filter(Boolean).join(', ') }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else>
+              <input type="text" disabled value="Indifférent" class="styled-input disabled-input" />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="startDate">Date de début des soins</label>
+            <input v-model="formData.startDate" type="date" id="startDate" class="styled-input" required />
+          </div>
         </div>
 
         <div class="form-row">
@@ -349,6 +465,96 @@ textarea.styled-input {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+.section-divider {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-divider h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.75rem;
+}
+
+.address-group {
+  position: relative;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.indiff-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.indiff-label {
+  font-size: 0.9rem !important;
+  color: #64748b !important;
+  cursor: pointer;
+  font-weight: 500 !important;
+  margin-bottom: 0 !important;
+}
+
+.autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.address-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.address-option {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.2s;
+}
+
+.address-option:last-child {
+  border-bottom: none;
+}
+
+.address-option:hover {
+  background: #f8fafc;
+}
+
+.addr-name {
+  font-weight: 700;
+  color: #334155;
+  font-size: 0.95rem;
+  margin-bottom: 0.15rem;
+}
+
+.addr-details {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.disabled-input {
+  background: #f1f5f9 !important;
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

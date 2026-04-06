@@ -22,7 +22,7 @@ const handleLogin = async () => {
   isLoading.value = true;
   
   try {
-    const response = await fetch(getApiUrl('/auth/login'), {
+    const response = await fetch(getApiUrl('/auth/login'), { credentials: 'include', 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ const handleLogin = async () => {
     storage.clear(); 
     if (fcmTokenToKeep) storage.setItem('fcm_token', fcmTokenToKeep);
 
-    storage.setItem('access_token', data.access_token, rememberMe.value);
+    // access_token is now handled securely by the browser via HttpOnly cookies
 
     // Get user ID: prefer explicit field, fall back to JWT sub claim
     let userId = data.id || (data.user && data.user.id);

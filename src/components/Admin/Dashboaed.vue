@@ -67,14 +67,11 @@ const stats = computed(() => {
 });
 
 const fetchDashboardStats = async () => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
     isLoadingStats.value = true;
-    const response = await fetch(getApiUrl('/admin/dashboard/stats'), {
+    const response = await fetch(getApiUrl('/admin/dashboard/stats'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -90,14 +87,11 @@ const fetchDashboardStats = async () => {
 };
 
 const fetchProfessionals = async () => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
     isLoadingDocs.value = true;
-    const response = await fetch(getApiUrl('/auth/professionals/documents'), {
+    const response = await fetch(getApiUrl('/auth/professionals/documents'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -132,21 +126,23 @@ watch(activeTab, (newTab) => {
   }
 });
 
-const handleLogout = () => {
+const handleLogout = async () => {
+  try {
+    await fetch(getApiUrl('/auth/logout'), { method: 'POST', credentials: 'include' });
+  } catch (e) {
+    console.error('Logout error:', e);
+  }
   localStorage.clear();
   sessionStorage.clear();
   emit('navigate', 'landing');
 };
 
 const handleBanToggle = async (proId: number, currentBanStatus: boolean) => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
-    const response = await fetch(getApiUrl(`/admin/users/${proId}/ban`), {
+    const response = await fetch(getApiUrl(`/admin/users/${proId}/ban`), { credentials: 'include', 
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'accept': '*/*'
       },

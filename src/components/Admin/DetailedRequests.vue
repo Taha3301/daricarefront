@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { getApiUrl } from '../../config/api';
-import { storage } from '../../utils/storage';
 
 interface Patient {
   name: string;
@@ -57,14 +56,11 @@ const computeTotalForPro = (proId: number) => {
 };
 
 const fetchDetailedRequests = async () => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
     isLoading.value = true;
-    const response = await fetch(getApiUrl('/admin/requests/detailed'), {
+    const response = await fetch(getApiUrl('/admin/requests/detailed'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });

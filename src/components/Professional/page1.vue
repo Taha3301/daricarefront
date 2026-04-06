@@ -193,13 +193,10 @@ const filteredCompleted = computed(() => {
 });
 
 const fetchProfessionalContent = async () => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   try {
-    const response = await fetch(getApiUrl('/services/professional/my-content'), {
+    const response = await fetch(getApiUrl('/services/professional/my-content'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -365,18 +362,15 @@ const subscribeToPushNotifications = async () => {
     console.log('Device successfully registered for background push:', subscription);
 
     // Send the unique Device ID (Subscription) to your backend
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      await fetch(getApiUrl('/notifications/subscribe'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(subscription)
-      });
-      console.log('Subscription saved on backend. Background notifications are now active.');
-    }
+    // Auth is handled via HttpOnly cookie (credentials: 'include')
+    await fetch(getApiUrl('/notifications/subscribe'), { credentials: 'include', 
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+},
+      body: JSON.stringify(subscription)
+    });
+    console.log('Subscription saved on backend. Background notifications are now active.');
   } catch (err) {
     console.error('Error in background notification setup:', err);
   }
@@ -425,13 +419,10 @@ const showBrowserNotification = (title: string, body: string) => {
 };
 
 const fetchUserProfile = async () => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   try {
-    const response = await fetch(getApiUrl('/auth/profile'), {
+    const response = await fetch(getApiUrl('/auth/profile'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -461,13 +452,10 @@ const fetchUserProfile = async () => {
 };
 
 const fetchBookingDetails = async (id: number) => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return null;
 
   try {
-    const response = await fetch(getApiUrl(`/bookings/${id}`), {
+    const response = await fetch(getApiUrl(`/bookings/${id}`), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
       }
     });
@@ -481,14 +469,12 @@ const fetchBookingDetails = async (id: number) => {
 };
 
 const fetchDistance = async (requestId: number) => {
-  const token = localStorage.getItem('access_token');
   const proId = professionalId.value || parseInt(localStorage.getItem('user_id') || '0');
-  if (!token || !proId) return;
+  if (!proId) return;
 
   try {
-    const response = await fetch(getApiUrl(`/bookings/distance/${requestId}/${proId}`), {
+    const response = await fetch(getApiUrl(`/bookings/distance/${requestId}/${proId}`), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -502,18 +488,16 @@ const fetchDistance = async (requestId: number) => {
 };
 
 const fetchInitialData = async () => {
-  const token = localStorage.getItem('access_token');
   const proId = professionalId.value || parseInt(localStorage.getItem('user_id') || '0');
-  if (!token || !userSpeciality.value) return;
+  if (!userSpeciality.value) return;
 
   isLoading.value = true;
   try {
     // 1. Fetch specific assignments for this professional
     let myAssignments: any[] = [];
     if (proId) {
-      const assignRes = await fetch(getApiUrl(`/bookings/professional/${proId}/assignments`), {
+      const assignRes = await fetch(getApiUrl(`/bookings/professional/${proId}/assignments`), { credentials: 'include', 
         headers: {
-          'Authorization': `Bearer ${token}`,
           'accept': 'application/json'
         }
       });
@@ -525,9 +509,8 @@ const fetchInitialData = async () => {
     }
 
     // 2. Fetch all bookings to cross-reference
-    const response = await fetch(getApiUrl('/bookings'), {
+    const response = await fetch(getApiUrl('/bookings'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -595,6 +578,7 @@ const initWebSocket = () => {
   console.log('🔌 Initializing WebSocket for:', userSpeciality.value);
   // use the standardized SOCKET_URL
   socket.value = io(SOCKET_URL, {
+    withCredentials: true,
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
@@ -659,14 +643,11 @@ const initWebSocket = () => {
 };
 
 const fetchPatients = async () => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   isLoading.value = true;
   try {
-    const response = await fetch(getApiUrl('/patients'), {
+    const response = await fetch(getApiUrl('/patients'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
       }
     });
@@ -700,7 +681,12 @@ onUnmounted(() => {
   }
 });
 
-const handleLogout = () => {
+const handleLogout = async () => {
+  try {
+    await fetch(getApiUrl('/auth/logout'), { method: 'POST', credentials: 'include' });
+  } catch (e) {
+    console.error('Logout error:', e);
+  }
   storage.clear();
   emit('navigate', 'landing');
 };
@@ -720,15 +706,13 @@ const translateType = (type: string) => {
 };
 
 const acceptRequest = async (id: number) => {
-  const token = localStorage.getItem('access_token');
-  if (!token || acceptingRequestId.value === id) return;
+  if (acceptingRequestId.value === id) return;
 
   acceptingRequestId.value = id;
   try {
-    const response = await fetch(getApiUrl(`/bookings/${id}/accept`), {
+    const response = await fetch(getApiUrl(`/bookings/${id}/accept`), { credentials: 'include', 
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -749,15 +733,13 @@ const acceptRequest = async (id: number) => {
 };
 
 const declineRequest = async (id: number) => {
-  const token = localStorage.getItem('access_token');
-  if (!token || decliningRequestId.value === id) return;
+  if (decliningRequestId.value === id) return;
 
   decliningRequestId.value = id;
   try {
-    const response = await fetch(getApiUrl(`/bookings/${id}/deny`), {
+    const response = await fetch(getApiUrl(`/bookings/${id}/deny`), { credentials: 'include', 
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -778,16 +760,13 @@ const declineRequest = async (id: number) => {
 };
 
 const completeRequest = async (id: number) => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
   if (!confirm('Voulez-vous marquer cette demande comme terminée ?')) return;
 
   try {
-    const response = await fetch(getApiUrl(`/bookings/${id}/complete`), {
+    const response = await fetch(getApiUrl(`/bookings/${id}/complete`), { credentials: 'include', 
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });

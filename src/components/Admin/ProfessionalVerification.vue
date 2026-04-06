@@ -2,7 +2,6 @@
 import { ref, onMounted, computed } from 'vue';
 import { getApiUrl } from '../../config/api';
 
-import { storage } from '../../utils/storage';
 
 const professionals = ref<any[]>([]);
 const isLoading = ref(false);
@@ -28,13 +27,10 @@ const filteredProfessionals = computed(() => {
 });
 
 const fetchAlerts = async (proId: number) => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
-    const response = await fetch(getApiUrl(`/alerts/professional/${proId}`), {
+    const response = await fetch(getApiUrl(`/alerts/professional/${proId}`), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -53,16 +49,13 @@ const sendAlert = async () => {
     return;
   }
 
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
     isSendingAlert.value = true;
-    const response = await fetch(getApiUrl('/alerts'), {
+    const response = await fetch(getApiUrl('/alerts'), { credentials: 'include', 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       },
       body: JSON.stringify({
@@ -94,15 +87,12 @@ const sendAlert = async () => {
 };
 
 const toggleAlertUpdate = async (alert: any) => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
-    const response = await fetch(getApiUrl(`/alerts/${alert.id}/toggle-update`), {
+    const response = await fetch(getApiUrl(`/alerts/${alert.id}/toggle-update`), { credentials: 'include', 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -143,14 +133,11 @@ const handleSelectPro = async (pro: any) => {
 };
 
 const fetchProfessionals = async () => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
     isLoading.value = true;
-    const response = await fetch(getApiUrl('/auth/professionals/documents'), {
+    const response = await fetch(getApiUrl('/auth/professionals/documents'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -162,9 +149,8 @@ const fetchProfessionals = async () => {
       // Fetch alerts for each professional in parallel to populate the status column
       const fetchAlertPromises = professionals.value.map(async (pro) => {
         try {
-          const alertsRes = await fetch(getApiUrl(`/alerts/professional/${pro.id}`), {
+          const alertsRes = await fetch(getApiUrl(`/alerts/professional/${pro.id}`), { credentials: 'include', 
             headers: {
-              'Authorization': `Bearer ${token}`,
               'accept': '*/*'
             }
           });
@@ -200,15 +186,12 @@ const getProAlertStatus = (proId: number) => {
 };
 
 const toggleDocumentVerification = async (docId: number, verified: boolean) => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
-    const response = await fetch(getApiUrl(`/documents/${docId}`), {
+    const response = await fetch(getApiUrl(`/documents/${docId}`), { credentials: 'include', 
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       },
       body: JSON.stringify({ verified })
@@ -222,11 +205,10 @@ const toggleDocumentVerification = async (docId: number, verified: boolean) => {
         // If unverifying and the pro is currently validated, demote to PENDING
         if (!verified && (selectedPro.value.status === 'ACCEPTED' || selectedPro.value.status === 'VALIDATED')) {
           try {
-            const statusResponse = await fetch(getApiUrl(`/auth/admin/user/${selectedPro.value.id}`), {
+            const statusResponse = await fetch(getApiUrl(`/auth/admin/user/${selectedPro.value.id}`), { credentials: 'include', 
               method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
                 'accept': '*/*'
               },
               body: JSON.stringify({ status: 'PENDING' })
@@ -260,15 +242,12 @@ const toggleDocumentVerification = async (docId: number, verified: boolean) => {
 };
 
 const validateAllDocuments = async (proId: number) => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
     isLoading.value = true;
-    const response = await fetch(getApiUrl(`/documents/professional/${proId}/verify`), {
+    const response = await fetch(getApiUrl(`/documents/professional/${proId}/verify`), { credentials: 'include', 
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });
@@ -292,15 +271,12 @@ const validateAllDocuments = async (proId: number) => {
 };
 
 const updateProfessionalStatus = async (proId: number, status: string) => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
-    const response = await fetch(getApiUrl(`/auth/admin/user/${proId}`), {
+    const response = await fetch(getApiUrl(`/auth/admin/user/${proId}`), { credentials: 'include', 
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       },
       body: JSON.stringify({ status: status === 'VALIDATED' ? 'ACCEPTED' : status })

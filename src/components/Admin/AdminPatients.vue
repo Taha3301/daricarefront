@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { getApiUrl } from '../../config/api';
-import { storage } from '../../utils/storage';
 
 interface Patient {
   id: number;
@@ -26,15 +25,12 @@ const successMessage = ref('');
 const selectedPatient = ref<Patient | null>(null);
 
 const fetchPatients = async () => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
     isLoading.value = true;
     errorMessage.value = '';
-    const response = await fetch(getApiUrl('/patients'), {
+    const response = await fetch(getApiUrl('/patients'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': 'application/json'
       }
     });
@@ -53,16 +49,13 @@ const fetchPatients = async () => {
 };
 
 const handleBanToggle = async (patient: Patient) => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   if (!confirm(`Voulez-vous vraiment ${patient.isBanned ? 'débloquer' : 'bloquer'} ce patient ?`)) return;
 
   try {
-    const response = await fetch(getApiUrl(`/admin/users/${patient.id}/ban`), {
+    const response = await fetch(getApiUrl(`/admin/users/${patient.id}/ban`), { credentials: 'include', 
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'accept': '*/*'
       },
@@ -94,7 +87,7 @@ const filteredPatients = computed(() => {
   return patients.value.filter(p => 
     p.firstname?.toLowerCase().includes(query) || 
     p.lastname?.toLowerCase().includes(query) || 
-    p.email?.toLowerCase().includes(query) ||
+    p.email?.toLowerCase().includes(query) || 
     p.phone?.includes(query)
   );
 });

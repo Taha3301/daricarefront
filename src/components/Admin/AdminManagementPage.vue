@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { storage } from '../../utils/storage';
 import SidebarAdmin from './SidebarAdmin.vue';
+import { getApiUrl } from '../../config/api';
 import AdminManagement from './AdminManagement.vue';
 import logo from '../../assets/LOGO H.png';
 
@@ -14,7 +15,12 @@ onMounted(() => {
   isSuperAdmin.value = storage.getItem('superadmin') === 'true';
 });
 
-const handleLogout = () => {
+const handleLogout = async () => {
+  try {
+    await fetch(getApiUrl('/auth/logout'), { method: 'POST', credentials: 'include' });
+  } catch (e) {
+    console.error('Logout error:', e);
+  }
   storage.clear();
   sessionStorage.clear();
   emit('navigate', 'landing');

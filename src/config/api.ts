@@ -4,6 +4,11 @@
 // API Base URL - dynamic based on environment
 // API Base URL - dynamic based on environment
 const getBaseUrl = () => {
+    // In development mode (npm run dev), use the Vite proxy (/api) to avoid CORS issues.
+    // In production or mobile builds, use the full absolute URL.
+    if (import.meta.env.DEV) {
+        return '/api';
+    }
     return 'https://daricareback.onrender.com';
 };
 

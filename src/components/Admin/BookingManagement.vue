@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getApiUrl } from '../../config/api';
-import { storage } from '../../utils/storage';
 
 const bookings = ref<any[]>([]);
 const isLoading = ref(false);
@@ -9,15 +8,12 @@ const selectedBooking = ref<any>(null);
 const errorMessage = ref('');
 
 const fetchBookings = async () => {
-  const token = storage.getItem('access_token');
-  if (!token) return;
 
   try {
     isLoading.value = true;
     errorMessage.value = '';
-    const response = await fetch(getApiUrl('/admin/requests/summary'), {
+    const response = await fetch(getApiUrl('/admin/requests/summary'), { credentials: 'include', 
       headers: {
-        'Authorization': `Bearer ${token}`,
         'accept': '*/*'
       }
     });

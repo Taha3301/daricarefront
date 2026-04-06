@@ -1,0 +1,9 @@
+﻿src/components/Admin/AdminAvis.vue(4,1): error TS6133: 'storage' is declared but its value is never read.
+src/components/Admin/AdminPatients.vue(4,1): error TS6133: 'storage' is declared but its value is never read.
+src/components/Admin/BookingManagement.vue(4,1): error TS6133: 'storage' is declared but its value is never read.
+src/components/Admin/Configuration.vue(5,7): error TS6133: 'localStorage' is declared but its value is never read.
+src/components/Admin/DetailedRequests.vue(4,1): error TS6133: 'storage' is declared but its value is never read.
+src/components/Admin/ProfessionalVerification.vue(5,1): error TS6133: 'storage' is declared but its value is never read.
+src/components/Admin/ServicesManagement.vue(5,7): error TS6133: 'localStorage' is declared but its value is never read.
+src/components/Professional/AnalyticsDashboard.vue(4,1): error TS6133: 'storage' is declared but its value is never read.
+src/components/Professional/SettingsProf.vue(4,7): error TS6133: 'localStorage' is declared but its value is never read.
