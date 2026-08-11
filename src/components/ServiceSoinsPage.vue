@@ -58,8 +58,9 @@ const emit = defineEmits<{
 const { isAr } = useLanguage();
 const tx = (fr: string, ar: string) => isAr.value ? ar : fr;
 
-const isLoading = ref(false);
+const isLoading = ref(true);
 const isSuccess = ref(false);
+const showNotFoundError = ref(false);
 const errorMsg = ref<string | null>(null);
 const services = ref<Service[]>([]);
 
@@ -343,8 +344,11 @@ const activeSoin = computed(() => {
 });
 
 const fetchServices = async () => {
+  const startTime = Date.now();
+  
   try {
     isLoading.value = true;
+    showNotFoundError.value = false;
     errorMsg.value = null;
 
     const res = await fetch(getApiUrl('/services'), { credentials: 'include', 
@@ -358,17 +362,31 @@ const fetchServices = async () => {
 
     if (!res.ok) throw new Error(`Failed to fetch services (${res.status})`);
     services.value = await res.json();
-    console.log('📦 Services loaded in booking page:', services.value.map(s => `ID ${s.id}: ${s.name}`));
-    console.log('🎯 Targeted Service ID:', props.serviceId);
     
+    // If we have a successful fetch but the specific service is still null, 
+    // it means it's a "Not Found" case.
     if (!service.value) {
       console.warn('⚠️ Service not found for ID:', props.serviceId);
+      
+      // Wait until 5 seconds have passed since start before showing the error page
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 5000) {
+        await new Promise(resolve => setTimeout(resolve, 5000 - elapsed));
+      }
+      showNotFoundError.value = true;
     }
 
     await handleAutoOpen();
   } catch (err: any) {
     console.error('Failed to fetch services:', err);
     errorMsg.value = err?.message || 'Impossible de charger les services.';
+    
+    // For failures, also wait until 5 seconds mark before giving up
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 5000) {
+      await new Promise(resolve => setTimeout(resolve, 5000 - elapsed));
+    }
+    showNotFoundError.value = true;
   } finally {
     isLoading.value = false;
   }
@@ -790,7 +808,11 @@ onMounted(() => {
           </div>
         </header>
 
-        <div v-if="isLoading" class="state">{{ tx('Chargement…', 'جار التحميل...') }}</div>
+        <!-- Premium Loading State -->
+        <div v-if="isLoading" class="state-container">
+          <div class="loading-pulse"></div>
+          <div class="loading-text">{{ tx('Préparation de vos soins…', 'جاري تحضير خدماتك...') }}</div>
+        </div>
         
         <!-- Success State View -->
         <div v-else-if="isSuccess" class="success-view">
@@ -1314,9 +1336,21 @@ onMounted(() => {
           <div v-if="errorMsg" class="state error mt-1">{{ errorMsg }}</div>
         </div>
         </template>
-        <div v-else class="state">
-          <p>{{ tx('Désolé, ce service est introuvable ou n\'existe plus.', 'عذراً، هذه الخدمة غير موجودة أو لم تعد متاحة.') }}</p>
-          <button class="btn-primary mt-1" @click="emit('navigate', 'landing')">{{ tx('Retour à l\'accueil', 'العودة للرئيسية') }}</button>
+        <!-- Premium Service Not Found / Error State -->
+        <div v-else-if="showNotFoundError" class="state-container">
+          <div class="error-illustration">
+            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#2b69ad" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <h2 class="error-title">{{ tx('Oups ! Page introuvable', 'عذراً! الصفحة غير موجودة') }}</h2>
+          <p class="error-desc">{{ tx('Il semble que ce service ne soit pas accessible pour le moment. Nous vous redirigeons vers l\'accueil pour trouver une alternative.', 'يبدو أن هذه الخدمة غير متاحة حالياً. نحن نوجهك إلى الصفحة الرئيسية للعثور على بديل.') }}</p>
+          <button class="btn-premium-home" @click="emit('navigate', 'landing')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            {{ tx('Retour à l\'accueil', 'العودة للرئيسية') }}
+          </button>
         </div>
       </div>
 

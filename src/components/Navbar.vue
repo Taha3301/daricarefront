@@ -73,6 +73,7 @@ onUnmounted(() => {
 
       <!-- Language Switcher - Both views -->
       <div class="navbar-controls">
+        <div id="mobile-search-teleport"></div>
         <div class="lang-switcher" @click.stop>
           <button class="btn-lang" @click="toggleLangMenu" :title="t.nav_lang_label">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -327,15 +328,18 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   height: 75px;
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(20px);
+  /* Solid fallback is much faster than blur on Android WebView */
+  background: rgba(255, 255, 255, 0.97);
   display: none;
   justify-content: space-around;
   align-items: center;
-  padding: 0.5rem 0.5rem 1.75rem; /* extra bottom padding for home indicator */
+  padding: 0.5rem 0.5rem 1.75rem;
   z-index: 1000;
-  box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.08);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+  /* Promote to its own GPU layer */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .bottom-nav-item {
@@ -343,21 +347,34 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  color: #475569; /* Improved from #64748b */
+  color: #475569;
   background: none;
   border: none;
   cursor: pointer;
   flex: 1;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Remove ugly browser blue tap highlight */
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .bottom-nav-item span {
   font-size: 0.65rem;
   font-weight: 600;
   text-transform: capitalize;
+  transition: color 0.2s ease;
 }
 
-.bottom-nav-item:active { transform: scale(0.9); }
+.bottom-nav-item:active {
+  transform: scale(0.82);
+  color: var(--primary-color);
+}
+
+.bottom-nav-item:active span {
+  color: var(--primary-color);
+}
 
 .bottom-nav-item.main-item {
   position: relative;
@@ -408,8 +425,8 @@ onUnmounted(() => {
     -webkit-backdrop-filter: none !important;
     box-shadow: none !important;
     border-bottom: none !important;
-    height: 64px !important; /* Fixed height for mobile to prevent layout thrashing */
-    transition: background 0.3s ease, box-shadow 0.3s ease;
+    height: 64px !important;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
   }
 
   .navbar.scrolled {

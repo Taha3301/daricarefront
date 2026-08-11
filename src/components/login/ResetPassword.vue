@@ -449,6 +449,9 @@ const handleResetPassword = async () => {
 }
 
 @media (max-width: 480px) {
+  .back-to-home {
+    display: none;
+  }
   .login-card {
     padding: 2rem;
     box-shadow: none;

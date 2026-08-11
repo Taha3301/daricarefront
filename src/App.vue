@@ -4,6 +4,20 @@ import { storage } from './utils/storage'
 import { useLanguage, type Lang } from './composables/useLanguage'
 import Navbar from './components/Navbar.vue'
 
+import bgAmbulance from './assets/desktopbg/Ambulance privée.png';
+import bgInfirmier from './assets/desktopbg/infermier.png';
+import bgKine from './assets/desktopbg/kine.png';
+import bgLocation from './assets/desktopbg/location.png';
+import bgMedecin from './assets/desktopbg/medicin a domicile.png';
+import bgSageFemme from './assets/desktopbg/sage-femme.png';
+
+const preloadImages = () => {
+  const images = [bgAmbulance, bgInfirmier, bgKine, bgLocation, bgMedecin, bgSageFemme];
+  images.forEach(src => {
+    const img = new Image();
+    img.src = src;
+  });
+};
 
 // ── Shared Loading / Error shims ─────────────────────────────────────────────
 const AppLoader = defineComponent({
@@ -71,6 +85,9 @@ const medicalRequests = ref<MedicalRequest[]>([]);
 
 
 onMounted(() => {
+  
+  // Preload landing page images
+  preloadImages();
 
   // Show language popup if no preference saved yet
   if (!localStorage.getItem('daricare_lang')) {
@@ -243,7 +260,8 @@ const currentViewProps = computed(() => {
     />
     
     <main>
-      <KeepAlive :max="5">
+      <!-- max="10" keeps all major pages in memory for instant navigation -->
+      <KeepAlive :max="10">
         <component 
           :is="currentViewComponent" 
           :key="currentView + sessionKey"
@@ -329,7 +347,11 @@ const currentViewProps = computed(() => {
   --bg-light: #f8fafc;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  /* Eliminate 300ms tap delay on ALL interactive elements */
+  touch-action: manipulation;
+}
 
 body {
   margin: 0;
@@ -337,8 +359,13 @@ body {
   background-color: var(--bg-light);
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden; /* Global fix for layout shift */
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
   width: 100%;
+  /* Prevent scroll lag on mobile */
+  overscroll-behavior: none;
+  /* Smooth momentum scroll */
+  -webkit-overflow-scrolling: touch;
 }
 
 .lang-ar body,
@@ -364,6 +391,29 @@ body {
 main {
   flex: 1;
   width: 100%;
+}
+
+/* ── Mobile Performance: disable heavy effects on phones ── */
+@media (max-width: 768px) {
+  /* backdrop-filter: blur() is extremely GPU-intensive on Android.
+     Replace with solid fallback backgrounds instead. */
+  .lang-popup-overlay {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(5, 15, 40, 0.92) !important;
+  }
+
+  /* Reduce all transitions to feel snappier on mobile */
+  *, *::before, *::after {
+    transition-duration: 0.15s !important;
+    animation-duration: 0.25s;
+  }
+
+  /* Exception: keep loading spinners at normal speed */
+  .async-spinner,
+  .loading-pulse {
+    animation-duration: 0.75s !important;
+  }
 }
 
 /* ── Language Popup ── */

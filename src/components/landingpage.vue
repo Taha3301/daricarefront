@@ -2,6 +2,7 @@
 import { onMounted, ref, computed } from 'vue';
 import { getApiUrl } from '../config/api';
 import Footer from './Footer.vue';
+import MobileServiceBubbles from './MobileServiceBubbles.vue';
 import { useLanguage } from '../composables/useLanguage';
 
 const { t, isAr } = useLanguage();
@@ -95,6 +96,7 @@ const selectSoin = (result: SoinResult) => {
 };
 
 const onSearchFocus = () => { showDropdown.value = true; };
+const onSearchInput = () => { showDropdown.value = true; };
 const onSearchBlur = () => { setTimeout(() => { showDropdown.value = false; }, 150); };
 
 const fetchServices = async () => {
@@ -102,7 +104,7 @@ const fetchServices = async () => {
     isLoading.value = true;
     errorMsg.value = null;
 
-    const response = await fetch(getApiUrl('/services/only'), { credentials: 'include', 
+    const response = await fetch(getApiUrl('/services'), { credentials: 'include', 
       headers: { accept: '*/*' } });
 
     if (response.status === 401) {
@@ -139,119 +141,164 @@ const optimizeCloudinary = (url: string | null | undefined, width = 600) => {
   return url;
 };
 
+/* ── Mobile search overlay toggle ── */
+const mobileSearchOpen = ref(false);
+const isMounted = ref(false);
+
+const toggleMobileSearch = () => {
+  mobileSearchOpen.value = !mobileSearchOpen.value;
+  if (!mobileSearchOpen.value) {
+    searchQuery.value = '';
+    showDropdown.value = false;
+  }
+};
+
 onMounted(() => {
+  isMounted.value = true;
   fetchServices();
 });
 </script>
 
 <template>
   <div class="landing-page">
-    <!-- Hero Section: Full Screen Premium -->
-    <section class="hero-section">
-      <!-- Background Image -->
-      <div class="hero-bg">
-        <div class="hero-overlay"></div>
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
+    <div class="hero-and-services-wrapper">
+      <!-- Background Mesh -->
+      <div class="mesh-bg">
+        <div class="mesh-blob mesh-1"></div>
+        <div class="mesh-blob mesh-2"></div>
+        <div class="mesh-blob mesh-3"></div>
       </div>
       
-      <div class="container hero-content">
-        <div class="hero-header">
-          <h1 class="hero-title">
-            {{ t.hero_title_1 }} <span class="highlight">{{ t.hero_title_highlight }}</span>{{ t.hero_title_2 }}
-          </h1>
-          <p class="hero-subtitle">{{ t.hero_subtitle }}</p>
-        </div>
-        
-        <div class="search-bar-wrap">
-          <div class="search-bar">
-            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input
-              v-model="searchQuery"
-              type="text"
-              class="search-input"
-              :placeholder="t.search_placeholder"
-              @focus="onSearchFocus"
-              @blur="onSearchBlur"
-            />
-            <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="container hero-content">
+          <div class="hero-header">
+            <h1 class="hero-title">
+              {{ t.hero_title_1 }} <span class="highlight">{{ t.hero_title_highlight }}</span>{{ t.hero_title_2 }}
+            </h1>
+          </div>
+
+          <!-- Mobile search icon (Teleported to Navbar on mobile) -->
+          <Teleport to="#mobile-search-teleport" v-if="isMounted">
+            <button class="mobile-search-btn" @click="toggleMobileSearch" aria-label="Rechercher">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
             </button>
-          </div>
+          </Teleport>
 
-          <!-- Dropdown results -->
-          <div v-if="showDropdown && searchQuery && filteredSoins.length > 0" class="search-dropdown">
-            <button
-              v-for="result in filteredSoins"
-              :key="result.soinId"
-              class="search-result-item"
-              @mousedown.prevent="selectSoin(result)"
-            >
-              <div class="result-soin-name">{{ isAr && result.soinNameAr ? result.soinNameAr : result.soinName }}</div>
-              <div class="result-service-name">{{ isAr && result.serviceNameAr ? result.serviceNameAr : result.serviceName }}</div>
-            </button>
-          </div>
-
-          <!-- No results -->
-          <div v-else-if="showDropdown && searchQuery && filteredSoins.length === 0" class="search-dropdown">
-            <div class="search-no-results">{{ t.search_no_results_prefix }} "{{ searchQuery }}"</div>
+          <!-- Desktop search bar (hidden on mobile via CSS) -->
+          <div class="search-bar-wrap desktop-search">
+            <div class="search-bar">
+              <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <input
+                v-model="searchQuery"
+                type="text"
+                class="search-input"
+                :placeholder="t.search_placeholder"
+                @focus="onSearchFocus"
+                @input="onSearchInput"
+                @blur="onSearchBlur"
+              />
+              <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div v-if="showDropdown && searchQuery && filteredSoins.length > 0" class="search-dropdown">
+              <button v-for="result in filteredSoins" :key="result.soinId" class="search-result-item" @mousedown.prevent="selectSoin(result)">
+                <div class="result-soin-name">{{ isAr && result.soinNameAr ? result.soinNameAr : result.soinName }}</div>
+                <div class="result-service-name">{{ isAr && result.serviceNameAr ? result.serviceNameAr : result.serviceName }}</div>
+              </button>
+            </div>
+            <div v-else-if="showDropdown && searchQuery && filteredSoins.length === 0" class="search-dropdown">
+              <div class="search-no-results">{{ t.search_no_results_prefix }} "{{ searchQuery }}"</div>
+            </div>
           </div>
         </div>
+      </section>
 
-        <div class="services-wrapper">
-          <h2 class="visually-hidden">Nos Services</h2>
-          <div v-if="isLoading" class="loader-wrap">
-            <div class="spinner"></div>
-            <p>{{ t.loading_services }}</p>
+      <!-- Mobile search overlay (shown when icon tapped) -->
+      <Transition name="msearch">
+        <div v-if="mobileSearchOpen" class="mobile-search-overlay" @click.self="toggleMobileSearch">
+          <div class="mobile-search-panel">
+            <div class="mobile-search-row">
+              <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <input
+                v-model="searchQuery"
+                type="text"
+                class="search-input"
+                :placeholder="t.search_placeholder"
+                @input="onSearchInput"
+                @focus="onSearchFocus"
+                autofocus
+              />
+              <button class="search-clear" @click="toggleMobileSearch">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div v-if="searchQuery && filteredSoins.length > 0" class="mobile-search-results">
+              <button v-for="result in filteredSoins" :key="result.soinId" class="search-result-item" @mousedown.prevent="selectSoin(result); toggleMobileSearch()">
+                <div class="result-soin-name">{{ isAr && result.soinNameAr ? result.soinNameAr : result.soinName }}</div>
+                <div class="result-service-name">{{ isAr && result.serviceNameAr ? result.serviceNameAr : result.serviceName }}</div>
+              </button>
+            </div>
+            <div v-else-if="searchQuery && filteredSoins.length === 0" class="mobile-search-results">
+              <div class="search-no-results" style="color:#64748b">{{ t.search_no_results_prefix }} "{{ searchQuery }}"</div>
+            </div>
           </div>
-          
-          <div v-else-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
-          
-          <div v-else class="services-grid" :class="{ 'is-rtl': isAr }">
-            <div 
-              v-for="(service, index) in sortedServices.slice(0, 12)" 
-              :key="service.id" 
-              class="service-card"
-              @click="emit('navigate', 'service-soins', service.id)"
-            >
-              <div class="card-image-wrap">
-                <picture v-if="service.image || getDesktopImage(service.name)">
-                  <source v-if="getDesktopImage(service.name)" media="(min-width: 769px)" :srcset="getDesktopImage(service.name)" />
-                  <img 
-                    :src="service.image ? optimizeCloudinary(service.image, 600) : getDesktopImage(service.name)" 
-                    :alt="isAr && service.name_ar ? service.name_ar : service.name"
-                    class="card-image"
-                    :loading="index < 4 ? 'eager' : 'lazy'"
-                    :fetchpriority="index < 2 ? 'high' : 'auto'"
-                    width="400"
-                    height="200"
-                  />
-                </picture>
-              </div>
-              <div class="card-shimmer"></div>
-              <div class="card-overlay"></div>
-              <div class="card-content">
-                <div class="card-text">
-                  <h3 :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && service.name_ar ? service.name_ar : service.name }}</h3>
-                  <p v-if="service.description" class="service-teaser">
-                    {{ isAr && service.description_ar ? service.description_ar : service.description }}
-                  </p>
+        </div>
+      </Transition>
+
+      <!-- Desktop Services (hidden on mobile) -->
+      <section class="services-section desktop-services">
+        <div class="container services-container">
+          <div class="services-wrapper">
+            <h2 class="visually-hidden">Nos Services</h2>
+            <div v-if="isLoading" class="loader-wrap">
+              <div class="spinner"></div>
+              <p>{{ t.loading_services }}</p>
+            </div>
+            <div v-else-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
+            <div v-else class="services-grid" :class="{ 'is-rtl': isAr }">
+              <div v-for="service in sortedServices" :key="service.id" class="service-card" @click="emit('navigate', 'service-soins', service.id)">
+                <div class="card-image-wrap">
+                  <picture v-if="service.image || getDesktopImage(service.name)">
+                    <source v-if="getDesktopImage(service.name)" media="(min-width: 769px)" :srcset="getDesktopImage(service.name)" />
+                    <img :src="service.image ? optimizeCloudinary(service.image, 600) : getDesktopImage(service.name)" :alt="isAr && service.name_ar ? service.name_ar : service.name" class="card-image" loading="eager" fetchpriority="high" width="400" height="200" />
+                  </picture>
                 </div>
-                <div class="card-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path v-if="!isAr" d="M5 12h14"></path>
-                    <path v-if="!isAr" d="M12 5l7 7-7 7"></path>
-                    <path v-if="isAr" d="M19 12H5"></path>
-                    <path v-if="isAr" d="M12 19l-7-7 7-7"></path>
-                  </svg>
+                <div class="card-shimmer"></div>
+                <div class="card-overlay"></div>
+                <div class="card-content">
+                  <div class="card-text">
+                    <h3 :dir="isAr ? 'rtl' : 'ltr'">{{ isAr && service.name_ar ? service.name_ar : service.name }}</h3>
+                    <p v-if="service.description" class="service-teaser">{{ isAr && service.description_ar ? service.description_ar : service.description }}</p>
+                  </div>
+                  <div class="card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path v-if="!isAr" d="M5 12h14"></path><path v-if="!isAr" d="M12 5l7 7-7 7"></path>
+                      <path v-if="isAr" d="M19 12H5"></path><path v-if="isAr" d="M12 19l-7-7 7-7"></path>
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <!-- Mobile Services: Floating Bubble Map (hidden on desktop) -->
+      <section class="mobile-services-section">
+        <MobileServiceBubbles
+          v-if="!isLoading && !errorMsg && services.length"
+          :services="sortedServices"
+          :is-ar="isAr"
+          @navigate="(view: string, sId?: number) => emit('navigate', view, sId)"
+        />
+        <div v-else-if="isLoading" class="loader-wrap" style="padding:2rem 1rem">
+          <div class="spinner"></div>
+          <p>{{ t.loading_services }}</p>
+        </div>
+      </section>
+    </div>
 
     <!-- Content Section: Why Choose Us -->
     <section class="content-section">
@@ -316,107 +363,105 @@ onMounted(() => {
 }
 
 /* Premium Hero Section */
-.hero-section {
+.hero-and-services-wrapper {
   position: relative;
-  min-height: 100vh;
   width: 100%;
+  min-height: 100vh;
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  flex-direction: column;
   overflow: hidden;
-  padding: 0 0 2rem;
+  background: #f8fafc;
 }
 
-/* Background Image */
-.hero-bg {
+.hero-section {
+  position: relative;
+  min-height: 65vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 25;
+  pointer-events: none; /* Don't block service card clicks */
+}
+
+/* Mesh Gradient Background */
+.mesh-bg {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background-image: url('../assets/bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  animation: kenBurns 40s ease-in-out infinite;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+  background-color: #f1f5f9;
+  overflow: hidden;
 }
 
-@keyframes kenBurns {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.hero-overlay {
+.mesh-blob {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 100%);
-  z-index: 2;
-}
-
-/* Floating Blobs */
-.blob {
-  position: absolute;
-  width: 600px;
-  height: 600px;
   border-radius: 50%;
-  filter: blur(100px);
-  z-index: 1;
-  opacity: 0.4;
+  filter: blur(80px);
+  opacity: 0.7;
+  animation: mesh-float 20s infinite alternate ease-in-out;
   pointer-events: none;
 }
 
-.blob-1 {
-  top: -100px;
-  right: -100px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, rgba(59, 130, 246, 0) 70%);
-  animation: float-1 30s infinite alternate;
+.mesh-1 {
+  top: -20%;
+  left: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.4) 0%, rgba(14, 165, 233, 0) 70%);
+  animation-delay: 0s;
 }
 
-.blob-2 {
-  bottom: -200px;
-  left: -100px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0) 70%);
-  animation: float-2 35s infinite alternate;
+.mesh-2 {
+  bottom: -20%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, rgba(99, 102, 241, 0) 70%);
+  animation-delay: -5s;
 }
 
-.blob-3 {
-  top: 50%;
+.mesh-3 {
+  top: 40%;
   left: 50%;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, rgba(139, 92, 246, 0) 70%);
-  animation: float-3 40s infinite alternate;
+  width: 40vw;
+  height: 40vw;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0) 70%);
+  animation-delay: -10s;
+  transform: translateX(-50%);
 }
 
-@keyframes float-1 {
+@keyframes mesh-float {
   0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-100px, 100px) scale(1.1); }
-}
-
-@keyframes float-2 {
-  0% { transform: translate(0, 0) scale(1.1); }
-  100% { transform: translate(150px, -50px) scale(1); }
-}
-
-@keyframes float-3 {
-  0% { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-20%, -30%) rotate(180deg); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
 }
 
 /* Content Layout */
 .hero-content {
   position: relative;
-  z-index: 10;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.25rem;
+  gap: 2.5rem;
   width: 100%;
   max-width: 1400px;
   padding: 0 2rem;
-  padding-top: 6rem;
+  margin-top: -6vh;
+  pointer-events: auto; /* Re-enable events for search bar */
+}
+
+/* ── Search Dropdown Transitions ── */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 /* ── Search Bar ── */
@@ -424,6 +469,7 @@ onMounted(() => {
   width: 100%;
   max-width: 620px;
   position: relative;
+  z-index: 50;
 }
 
 .search-bar {
@@ -587,7 +633,21 @@ onMounted(() => {
   text-shadow: 0 1px 4px rgba(255,255,255,0.3);
 }
 
-/* Services Grid */
+/* Services Section */
+.services-section {
+  position: relative;
+  z-index: 20;
+  margin-top: -160px; /* Pull up more into hero so cards fit on screen */
+  padding-bottom: 4rem; /* Reduced to avoid excessive empty space */
+  width: 100%;
+}
+
+.services-container {
+  padding: 0 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
 .services-wrapper {
   width: 100%;
   display: flex;
@@ -596,10 +656,10 @@ onMounted(() => {
 
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1300px;
 }
 
 /* Glassmorphism Card */
@@ -614,8 +674,7 @@ onMounted(() => {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   /* Organic Multi-Axis Animation */
   animation-delay: 0s;
-  height: auto;
-  aspect-ratio: 948 / 239;
+  height: 150px;
   display: flex;
   align-items: flex-end; /* Align content to bottom */
   transform: translateZ(0);
@@ -644,6 +703,7 @@ onMounted(() => {
   box-shadow: 0 25px 40px -10px rgba(59, 130, 246, 0.25);
   border-color: #3b82f6;
   z-index: 10;
+  transform: translateZ(0) translateY(-8px);
 }
 
 .card-overlay {
@@ -706,11 +766,11 @@ onMounted(() => {
 .card-content {
   position: relative;
   z-index: 2;
-  padding: 1.5rem;
+  padding: 1.15rem;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   width: 100%;
 }
 
@@ -726,7 +786,7 @@ onMounted(() => {
 }
 
 .card-content h3 {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #ffffff;
   margin: 0;
@@ -736,7 +796,7 @@ onMounted(() => {
 }
 
 .service-teaser {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.7);
   font-weight: 500;
   margin: 0;
@@ -915,154 +975,163 @@ onMounted(() => {
   .content-section { padding: 4rem 2rem; }
 }
 
+/* ── Mobile search button (hidden on desktop) ── */
+.mobile-search-btn { display: none; }
+
+/* ── Mobile services section (hidden on desktop) ── */
+.mobile-services-section { display: none; }
+
 @media (max-width: 768px) {
-  .hero-content {
-    padding-top: 2.5rem;
-    gap: 0.75rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
+
+  /* ── Hero ── */
+  .hero-section   { min-height: 22vh; pointer-events: none; }
+  .hero-content   { padding-top: 2rem; gap: 0.5rem; padding-left: 1rem; padding-right: 1rem; pointer-events: auto; }
+  .hero-title     { font-size: 1.55rem; line-height: 1.1; margin-bottom: 0; }
+  .hero-subtitle  { font-size: 0.85rem; }
+  .hero-bg        { animation: none; }
+  .blob { display: none; }
   
-  .hero-title {
-    font-size: 1.7rem;
-    line-height: 1.1;
-    margin-bottom: 0.1rem;
-  }
+  /* ── Scale up mesh gradient for mobile ── */
+  .mesh-1 { width: 150vw; height: 150vw; top: -20%; left: -40%; }
+  .mesh-2 { width: 160vw; height: 160vw; bottom: 0%; right: -50%; }
+  .mesh-3 { width: 140vw; height: 140vw; top: 40%; left: -20%; }
 
-  .hero-subtitle {
-    font-size: 0.9rem;
-  }
+  /* ── Hide desktop search & services ── */
+  .desktop-search     { display: none !important; }
+  .desktop-services   { display: none !important; }
 
-  .services-grid { 
-    grid-template-columns: 1fr; 
-    gap: 1rem;
-  }
-
-  /* Limit to 6 items maximum on mobile */
-  .service-card:nth-child(n+7) {
-    display: none;
-  }
-  
-  .hero-bg {
-    animation: none; /* Disable Ken Burns on mobile */
-  }
-  
-  .blob {
-    display: none; /* Hide expensive blur blobs on mobile */
-  }
-  
-  .search-bar {
-    padding: 0.6rem 1rem;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    background: rgba(255, 255, 255, 0.7);
-  }
-
-  .search-input {
-    font-size: 0.85rem;
-  }
-  
-  .search-dropdown {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: rgba(10, 20, 50, 0.98);
-  }
-  
-  .service-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    height: auto;
-    aspect-ratio: 948 / 239;
-  }
-
-  .card-content {
-    padding: 0.85rem;
-  }
-
-  .card-content h3 {
-    font-size: 0.9rem; /* Slightly smaller for more space */
-    font-weight: 700;
-    margin-bottom: 0.15rem;
-    white-space: normal;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    line-height: 1.1;
-  }
-
-  .service-teaser {
-    font-size: 0.7rem;
-    line-height: 1.1;
-    display: -webkit-box;
-    -webkit-line-clamp: 1; /* Limit to 1 line on mobile to avoid overlap */
-    line-clamp: 1;
-    color: #f8fafc; /* Improved contrast for overlay text */
-  }
-
-  .card-icon {
-    padding: 8px;
-    background: #3b82f6; /* Solid blue for better visibility */
-    color: white;
-    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+  /* ── Show mobile search icon in Navbar ── */
+  .mobile-search-btn {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(0,0,0,0.1);
+    color: #1e293b;
+    cursor: pointer;
+    padding: 0;
+    backdrop-filter: blur(8px);
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
+  .mobile-search-btn:active { background: #eff6ff; color: #2b69ad; border-color: #2b69ad; }
 
-  .card-icon svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .content-section {
-    padding: 3rem 1rem;
-  }
-
-  .section-header {
-    margin-bottom: 2rem;
-  }
-
-  .section-title {
-    font-size: 1.6rem;
-  }
-
-  .feature-card {
-    padding: 1.75rem 1.25rem;
-    text-align: center;
+  /* ── Show mobile services ── */
+  .mobile-services-section {
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
+    justify-content: flex-start;
     align-items: center;
-    gap: 1.25rem;
+    position: relative;
+    z-index: 20;
+    padding-bottom: 0;
+    margin-top: -1vh;
   }
 
-  .feature-icon {
-    width: 48px;
-    height: 48px;
-    flex-shrink: 0;
-    margin: 0 auto 0.5rem;
-  }
+  /* ── Full height hero wrapper ── */
+  .hero-and-services-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
 
-  .feature-card h3 {
-    font-size: 1.1rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .feature-card p {
-    font-size: 0.88rem;
-    line-height: 1.4;
-  }
+  /* ── Features ── */
+  .content-section  { padding: 3rem 1rem; }
+  .section-header   { margin-bottom: 2rem; }
+  .section-title    { font-size: 1.6rem; }
+  .feature-card     { padding: 1.75rem 1.25rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1.25rem; }
+  .feature-icon     { width: 48px; height: 48px; flex-shrink: 0; margin: 0 auto 0.5rem; }
+  .feature-card h3  { font-size: 1.1rem; margin-bottom: 0.25rem; }
+  .feature-card p   { font-size: 0.88rem; line-height: 1.4; }
 }
 
+/* ── Mobile search overlay ── */
+.mobile-search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.mobile-search-panel {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 6px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.mobile-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.mobile-search-row .search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.mobile-search-row .search-clear {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+}
+
+.mobile-search-results {
+  overflow-y: auto;
+  max-height: 60vh;
+  border-top: 1px solid #f1f5f9;
+}
+
+.mobile-search-results .search-result-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Outfit', sans-serif;
+}
+.mobile-search-results .search-result-item:last-child { border-bottom: none; }
+.mobile-search-results .search-result-item:active { background: #f8fafc; }
+.mobile-search-results .result-soin-name { font-size: 0.9rem; font-weight: 700; color: #0f172a; }
+.mobile-search-results .result-service-name { font-size: 0.72rem; color: #94a3b8; font-weight: 500; }
+
+/* ── Mobile search transitions ── */
+.msearch-enter-active { transition: opacity 0.25s ease; }
+.msearch-leave-active { transition: opacity 0.2s ease; }
+.msearch-enter-from, .msearch-leave-to { opacity: 0; }
+
 .landing-page {
-  overflow-x: hidden; /* Prevent horizontal scroll/shift */
+  overflow-x: hidden;
   width: 100%;
 }
 
 @media (max-width: 600px) {
-  /* Smaller screens */
-  .hero-title { font-size: 1.6rem; }
-  .card-image { height: 100%; }
+  .hero-title { font-size: 1.45rem; }
 }
 
 </style>

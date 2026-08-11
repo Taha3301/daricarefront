@@ -543,4 +543,15 @@ const handleSignup = async () => {
     display: none;
   }
 }
+
+@media (max-width: 480px) {
+  .back-to-home {
+    display: none;
+  }
+  .signup-card {
+    padding: 2rem;
+    box-shadow: none;
+    border-radius: 0;
+  }
+}
 </style>

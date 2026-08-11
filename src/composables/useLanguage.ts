@@ -328,6 +328,10 @@ export function useLanguage() {
 
     const setLang = (lang: Lang) => {
         currentLang.value = lang;
+        // Always persist explicitly — watcher only fires on value *change*,
+        // so choosing the default ('fr') would otherwise never be saved.
+        localStorage.setItem(STORAGE_KEY, lang);
+        document.documentElement.setAttribute('lang', lang);
     };
 
     const toggleLang = () => {
